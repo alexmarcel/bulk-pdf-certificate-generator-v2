@@ -15,14 +15,13 @@ WINNIE is a browser-based certificate generator designed for institutions that i
 
 Everything lives in a single `index.html` file. Drop it on a web server alongside your background image and name list, and it's ready to use.
 
-
 <img width="1202" height="893" alt="screenshot" src="https://github.com/user-attachments/assets/f85cf92c-0d2e-459a-bc3f-64176395a9df" />
 
 ---
 
 ## Features
 
-- 🖼️ **Custom certificate background** — upload any JPG/PNG template
+- 🖼️ **Custom certificate background** — upload any JPG/PNG template, or use the auto-generated white + gold border fallback
 - 👥 **Bulk name list** — upload a `.txt`/`.csv` file or type names manually
 - ✏️ **Live preview** — see exactly how each certificate will look before generating
 - ⚙️ **Field positioning** — adjust Y-position and font size for every field
@@ -32,7 +31,10 @@ Everything lives in a single `index.html` file. Drop it on a web server alongsid
 - 🔢 **Auto-incrementing serial numbers** — with a customisable prefix
 - 📦 **ZIP export** — download all certificates in one ZIP file
 - 💾 **Backup & Restore Dataset** — save your entire setup (settings + background + name list) as a ZIP and restore it later
+- 🔍 **Name list search** — live search with highlighted matches
+- 🔽 **Name list filter** — filter the checklist by All, Checked, or Unchecked names
 - 🚀 **Auto-loading** — automatically loads `default_background.jpg` and `namelist.txt` from the same folder on startup
+- 🎨 **Fallback background** — if no `default_background.jpg` is found, a clean white certificate with a gold border is generated automatically
 
 ---
 
@@ -96,6 +98,9 @@ WINNIE supports two ways to load a background:
 **Auto-load (server setup)**
 Place a file named `default_background.jpg` in the same folder as `index.html`. It will be detected and loaded automatically on startup.
 
+**No file found — fallback background**
+If `default_background.jpg` is not present, WINNIE automatically generates a clean white certificate background with a gold double-border and corner ornaments. This is fully functional and will be embedded into the generated PDFs.
+
 **Manual upload**
 In the **Background** section on the left panel, click the upload zone or drag and drop a JPG or PNG file onto it. An A4 portrait ratio (210 × 297 mm) is recommended for best results.
 
@@ -141,10 +146,10 @@ Expand **Field Positions** to fine-tune the placement of each text element on th
 
 | Field | Default Y (mm) | Default Size | Visible by Default |
 |---|---|---|---|
-| Staff Name | 148 | 20pt | ✅ |
-| Event Title | 170 | 14pt | ✅ |
-| Date | 190 | 13pt | ✅ |
-| Organizer | 210 | 12pt | ✅ |
+| Staff Name | 123 | 20pt | ✅ |
+| Event Title | 150 | 14pt | ✅ |
+| Date | 178 | 13pt | ✅ |
+| Organizer | 201 | 12pt | ✅ |
 | Location | 225 | 12pt | ❌ |
 | Serial Number | 278 | 8pt | ✅ |
 
@@ -188,23 +193,47 @@ Names are automatically converted to uppercase and deduplicated.
 
 ### Step 6 — Select Recipients
 
-Once the name list is applied, a scrollable checklist appears. Use the buttons to manage selection:
+Once the name list is applied, a scrollable checklist appears.
 
-- **Select All** — tick everyone
-- **None** — untick everyone
-- **Invert** — flip the current selection
+**Selection buttons:**
 
-You can also click individual names to toggle them. The header badge updates in real time to show how many are selected.
+| Button | Action |
+|---|---|
+| Select All | Tick all names |
+| None | Untick all names |
+| Invert | Flip the current selection |
+
+**Filter dropdown** (next to Invert):
+
+| Option | Shows |
+|---|---|
+| All | Every name in the list |
+| ✓ Checked | Only currently selected names |
+| ✗ Unchecked | Only currently unselected names |
+
+You can also click individual names to toggle them. The header badge updates in real time to show how many are currently selected.
 
 ---
 
-### Step 7 — Preview
+### Step 7 — Search the Name List
+
+Use the **search box** below the selection buttons to find names quickly.
+
+- Typing filters the list instantly — no need to press Enter
+- Matching characters are **highlighted in gold**
+- The status bar shows the number of matches, e.g. `24 people, 18 selected (3 shown)`
+- Click **✕** to clear the search and return to the full list
+- Search and the filter dropdown work together — e.g. search `"ahmad"` while filtering to **✗ Unchecked** to find unselected people by name
+
+---
+
+### Step 8 — Preview
 
 The **Live Preview** panel on the right shows a full A4 rendering of the certificate for the currently previewed person. Use the **◀ ▶** navigation buttons to browse through the name list and verify that text is correctly positioned on your background template before generating.
 
 ---
 
-### Step 8 — Generate Certificates
+### Step 9 — Generate Certificates
 
 At the bottom of the preview panel:
 
@@ -251,6 +280,9 @@ Click **⬆ Restore Dataset** and select a previously saved backup ZIP. WINNIE w
 **Background or name list not auto-loading**
 Auto-loading requires the HTML to be served over HTTP. Opening the file directly as `file://` will not work. Use a web server (Apache, Nginx) or VS Code Live Server.
 
+**No background image — gold border appears instead**
+This is expected behaviour. If `default_background.jpg` is not found, WINNIE generates a white certificate with a gold border automatically. Upload a background image manually or place `default_background.jpg` in the same folder.
+
 **Text is misaligned on the certificate**
 Adjust the Y-position values in **Field Positions**. Preview with several different names before bulk generating, as name length can affect visual balance.
 
@@ -262,6 +294,9 @@ All names are auto-converted to uppercase. If you need mixed case, this behaviou
 
 **Restore Dataset doesn't load my background**
 The backup ZIP must have been created by WINNIE's **Backup Dataset** function. Manually created ZIPs will not be recognised.
+
+**Search shows no results**
+Check that the filter dropdown is set to **All** — if it's set to **✓ Checked** or **✗ Unchecked**, results are limited to that subset.
 
 ---
 
