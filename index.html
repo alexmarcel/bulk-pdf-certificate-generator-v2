@@ -595,6 +595,70 @@
     to { opacity: 1; transform: none; }
   }
 
+  /* SEARCH */
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 10px;
+    gap: 7px;
+    margin-bottom: 6px;
+    transition: border-color 0.15s;
+  }
+
+  .search-wrap:focus-within {
+    border-color: var(--accent);
+    background: var(--surface3);
+  }
+
+  .search-icon { font-size: 12px; flex-shrink: 0; opacity: 0.6; }
+
+  .search-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 7px 0;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    width: 100%;
+  }
+
+  .search-clear {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    display: none;
+    line-height: 1;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .search-clear:hover { color: var(--danger); }
+  .search-clear.visible { display: block; }
+
+  .staff-item mark {
+    background: rgba(200, 169, 110, 0.3);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
+    font-style: normal;
+  }
+
+  .staff-no-results {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -806,6 +870,12 @@
           <button class="btn btn-ghost btn-sm" onclick="selectAll()">Select All</button>
           <button class="btn btn-ghost btn-sm" onclick="selectNone()">None</button>
           <button class="btn btn-ghost btn-sm" onclick="invertSelection()">Invert</button>
+        </div>
+
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="staffSearch" placeholder="Search names…" oninput="filterStaffList()" autocomplete="off">
+          <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">✕</button>
         </div>
 
         <div class="staff-list-container" id="staffList"></div>
@@ -1034,33 +1104,63 @@ function applyStaffList() {
 }
 
 function renderStaffList() {
-  const container = document.getElementById('staffList');
-  if (!staffNames.length) {
-    container.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-dim); font-size:12px">No staff loaded</div>';
-    document.getElementById('staffCount').textContent = '0 people, 0 selected';
-    return;
-  }
-  container.innerHTML = staffNames.map((name, i) => `
-    <div class="staff-item ${staffSelected[i] ? 'selected' : ''}" onclick="toggleStaff(${i})">
-      <input type="checkbox" ${staffSelected[i] ? 'checked' : ''} onclick="event.stopPropagation(); toggleStaff(${i})">
-      <span class="staff-num">${String(i+1).padStart(2,'0')}</span>
-      <span>${name}</span>
-    </div>
-  `).join('');
-  const sel = staffSelected.filter(Boolean).length;
-  document.getElementById('staffCount').textContent = `${staffNames.length} people, ${sel} selected`;
-  updateHeaderCount();
+  filterStaffList();
 }
 
 function toggleStaff(i) {
   staffSelected[i] = !staffSelected[i];
   if (previewPersonIndex === i) updatePreview();
-  renderStaffList();
+  filterStaffList();
 }
 
-function selectAll()    { staffSelected = staffNames.map(() => true);  renderStaffList(); updatePreview(); }
-function selectNone()   { staffSelected = staffNames.map(() => false); renderStaffList(); updatePreview(); }
-function invertSelection() { staffSelected = staffSelected.map(v => !v); renderStaffList(); updatePreview(); }
+function selectAll()       { staffSelected = staffNames.map(() => true);  filterStaffList(); updatePreview(); }
+function selectNone()      { staffSelected = staffNames.map(() => false); filterStaffList(); updatePreview(); }
+function invertSelection() { staffSelected = staffSelected.map(v => !v);  filterStaffList(); updatePreview(); }
+
+function filterStaffList() {
+  const query = (document.getElementById('staffSearch')?.value || '').trim().toUpperCase();
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.classList.toggle('visible', query.length > 0);
+
+  const container = document.getElementById('staffList');
+  if (!staffNames.length) {
+    container.innerHTML = '<div class="staff-no-results">No staff loaded</div>';
+    document.getElementById('staffCount').textContent = '0 people, 0 selected';
+    updateHeaderCount();
+    return;
+  }
+
+  const filtered = staffNames
+    .map((name, i) => ({ name, i }))
+    .filter(({ name }) => !query || name.includes(query));
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="staff-no-results">No results for "<strong>${query}</strong>"</div>`;
+  } else {
+    container.innerHTML = filtered.map(({ name, i }) => {
+      const display = query
+        ? name.replace(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>')
+        : name;
+      return `
+        <div class="staff-item ${staffSelected[i] ? 'selected' : ''}" onclick="toggleStaff(${i})">
+          <input type="checkbox" ${staffSelected[i] ? 'checked' : ''} onclick="event.stopPropagation(); toggleStaff(${i})">
+          <span class="staff-num">${String(i + 1).padStart(2, '0')}</span>
+          <span>${display}</span>
+        </div>`;
+    }).join('');
+  }
+
+  const sel = staffSelected.filter(Boolean).length;
+  const matchLabel = query ? ` (${filtered.length} match${filtered.length !== 1 ? 'es' : ''})` : '';
+  document.getElementById('staffCount').textContent = `${staffNames.length} people, ${sel} selected${matchLabel}`;
+  updateHeaderCount();
+}
+
+function clearSearch() {
+  document.getElementById('staffSearch').value = '';
+  filterStaffList();
+  document.getElementById('staffSearch').focus();
+}
 
 function updateHeaderCount() {
   const sel = staffSelected.filter(Boolean).length;
