@@ -869,10 +869,10 @@ let previewPersonIndex = 0;
 let previewCanvas = null;
 
 const FIELDS = [
-  { id: 'name',       label: 'Staff Name',    yMm: 148, fontSize: 20, visible: true,  bold: true  },
-  { id: 'title',      label: 'Event Title',   yMm: 170, fontSize: 14, visible: true,  bold: false },
-  { id: 'date',       label: 'Date',          yMm: 190, fontSize: 13, visible: true,  bold: false },
-  { id: 'organizer',  label: 'Organizer',     yMm: 210, fontSize: 12, visible: true,  bold: false },
+  { id: 'name',       label: 'Staff Name',    yMm: 123, fontSize: 20, visible: true,  bold: true  },
+  { id: 'title',      label: 'Event Title',   yMm: 150, fontSize: 14, visible: true,  bold: false },
+  { id: 'date',       label: 'Date',          yMm: 178, fontSize: 13, visible: true,  bold: false },
+  { id: 'organizer',  label: 'Organizer',     yMm: 201, fontSize: 12, visible: true,  bold: false },
   { id: 'location',   label: 'Location',      yMm: 225, fontSize: 12, visible: false, bold: false },
   { id: 'serial',     label: 'Serial Number', yMm: 278, fontSize: 8,  visible: true,  bold: false },
 ];
@@ -902,10 +902,64 @@ function autoLoadDefaultBackground() {
     toast('Default background auto-loaded', 'success');
   };
   img.onerror = () => {
-    // File not present — silently continue
+    // File not present — generate a white + gold border fallback
+    generateFallbackBackground();
     updatePreview();
   };
   img.src = 'default_background.jpg';
+}
+
+function generateFallbackBackground() {
+  const W = 794, H = 1123; // A4 at ~96dpi
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Outer gold border
+  ctx.strokeStyle = '#c8a96e';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(18, 18, W - 36, H - 36);
+
+  // Inner thin gold border
+  ctx.strokeStyle = '#c8a96e';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
+
+  // Innermost hairline
+  ctx.strokeStyle = '#e8d49a';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(36, 36, W - 72, H - 72);
+
+  // Corner ornaments — small filled squares at each corner
+  const corners = [
+    [18, 18], [W - 18, 18], [18, H - 18], [W - 18, H - 18]
+  ];
+  ctx.fillStyle = '#c8a96e';
+  corners.forEach(([cx, cy]) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Mid-border dots on each side
+  const mids = [
+    [W / 2, 18], [W / 2, H - 18],
+    [18, H / 2], [W - 18, H / 2]
+  ];
+  ctx.fillStyle = '#c8a96e';
+  mids.forEach(([mx, my]) => {
+    ctx.beginPath();
+    ctx.arc(mx, my, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  bgImage = canvas.toDataURL('image/jpeg', 1.0);
+  document.getElementById('bgName').textContent = '✦ Default background (auto-generated)';
 }
 
 function autoLoadNamelist() {
