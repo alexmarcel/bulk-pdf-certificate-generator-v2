@@ -644,6 +644,30 @@
   .search-clear:hover { color: var(--danger); }
   .search-clear.visible { display: block; }
 
+  .filter-select {
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    width: auto !important;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .filter-select:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .filter-select:focus {
+    border-color: var(--accent);
+    color: var(--text);
+    outline: none;
+  }
+
   .staff-item mark {
     background: rgba(200, 169, 110, 0.3);
     color: var(--accent);
@@ -870,6 +894,11 @@
           <button class="btn btn-ghost btn-sm" onclick="selectAll()">Select All</button>
           <button class="btn btn-ghost btn-sm" onclick="selectNone()">None</button>
           <button class="btn btn-ghost btn-sm" onclick="invertSelection()">Invert</button>
+          <select id="staffFilter" class="filter-select" onchange="filterStaffList()" title="Filter list view">
+            <option value="all">All</option>
+            <option value="checked">✓ Checked</option>
+            <option value="unchecked">✗ Unchecked</option>
+          </select>
         </div>
 
         <div class="search-wrap">
@@ -1118,8 +1147,9 @@ function selectNone()      { staffSelected = staffNames.map(() => false); filter
 function invertSelection() { staffSelected = staffSelected.map(v => !v);  filterStaffList(); updatePreview(); }
 
 function filterStaffList() {
-  const query = (document.getElementById('staffSearch')?.value || '').trim().toUpperCase();
-  const clearBtn = document.getElementById('searchClear');
+  const query     = (document.getElementById('staffSearch')?.value || '').trim().toUpperCase();
+  const filterVal = document.getElementById('staffFilter')?.value || 'all';
+  const clearBtn  = document.getElementById('searchClear');
   if (clearBtn) clearBtn.classList.toggle('visible', query.length > 0);
 
   const container = document.getElementById('staffList');
@@ -1132,10 +1162,18 @@ function filterStaffList() {
 
   const filtered = staffNames
     .map((name, i) => ({ name, i }))
-    .filter(({ name }) => !query || name.includes(query));
+    .filter(({ name, i }) => {
+      const matchesSearch = !query || name.includes(query);
+      const matchesFilter =
+        filterVal === 'all'       ? true :
+        filterVal === 'checked'   ? staffSelected[i] :
+        filterVal === 'unchecked' ? !staffSelected[i] : true;
+      return matchesSearch && matchesFilter;
+    });
 
   if (!filtered.length) {
-    container.innerHTML = `<div class="staff-no-results">No results for "<strong>${query}</strong>"</div>`;
+    const reason = query ? `"<strong>${query}</strong>"` : filterVal === 'checked' ? 'checked names' : 'unchecked names';
+    container.innerHTML = `<div class="staff-no-results">No results for ${reason}</div>`;
   } else {
     container.innerHTML = filtered.map(({ name, i }) => {
       const display = query
@@ -1151,7 +1189,7 @@ function filterStaffList() {
   }
 
   const sel = staffSelected.filter(Boolean).length;
-  const matchLabel = query ? ` (${filtered.length} match${filtered.length !== 1 ? 'es' : ''})` : '';
+  const matchLabel = (query || filterVal !== 'all') ? ` (${filtered.length} shown)` : '';
   document.getElementById('staffCount').textContent = `${staffNames.length} people, ${sel} selected${matchLabel}`;
   updateHeaderCount();
 }
