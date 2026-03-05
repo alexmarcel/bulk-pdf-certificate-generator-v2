@@ -1,0 +1,290 @@
+# WINNIE
+### Web-based Institutional Nursing Name-list Issuance of E-Certificates
+
+> A single-file, no-install web application for generating bulk PDF certificates — built for nursing and healthcare training institutions.
+
+![License](https://img.shields.io/badge/license-Apache%202.0-blue)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![No Backend](https://img.shields.io/badge/backend-none-brightgreen)
+
+---
+
+## What is WINNIE?
+
+WINNIE is a browser-based certificate generator designed for institutions that issue certificates in bulk — such as after nursing courses, in-service training, or continuing professional development programmes. It runs entirely in the browser with no server, no installation, and no internet connection required (after first load).
+
+Everything lives in a single `index.html` file. Drop it on a web server alongside your background image and name list, and it's ready to use.
+
+---
+
+## Features
+
+- 🖼️ **Custom certificate background** — upload any JPG/PNG template
+- 👥 **Bulk name list** — upload a `.txt`/`.csv` file or type names manually
+- ✏️ **Live preview** — see exactly how each certificate will look before generating
+- ⚙️ **Field positioning** — adjust Y-position and font size for every field
+- 👁️ **Field visibility** — toggle individual fields on or off
+- 🎨 **Typography controls** — choose font family and text colour
+- 📅 **Smart date formatting** — automatically formats single and ranged dates
+- 🔢 **Auto-incrementing serial numbers** — with a customisable prefix
+- 📦 **ZIP export** — download all certificates in one ZIP file
+- 💾 **Backup & Restore Dataset** — save your entire setup (settings + background + name list) as a ZIP and restore it later
+- 🚀 **Auto-loading** — automatically loads `default_background.jpg` and `namelist.txt` from the same folder on startup
+
+---
+
+## File Structure
+
+For the best experience, place these files together in the same directory:
+
+```
+your-folder/
+├── index.html               ← WINNIE application
+├── default_background.jpg   ← (optional) auto-loaded certificate background
+└── namelist.txt             ← (optional) auto-loaded staff name list
+```
+
+---
+
+## Installation & Setup
+
+### Option A — Apache / Nginx Web Server (recommended)
+
+This method enables auto-loading of `default_background.jpg` and `namelist.txt`.
+
+1. Copy files to your web server root:
+   ```bash
+   sudo cp index.html /var/www/html/
+   sudo cp default_background.jpg /var/www/html/      # optional
+   sudo cp namelist.txt /var/www/html/                # optional
+   ```
+
+2. Set permissions:
+   ```bash
+   sudo chmod 644 /var/www/html/index.html
+   sudo chmod 644 /var/www/html/default_background.jpg
+   sudo chmod 644 /var/www/html/namelist.txt
+   ```
+
+3. Open in browser:
+   ```
+   http://your-server-ip/index.html
+   ```
+
+### Option B — VS Code Live Server (local development)
+
+1. Install the [Live Server extension](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) in VS Code
+2. Open the project folder in VS Code
+3. Right-click `index.html` → **Open with Live Server**
+4. Auto-loading of `default_background.jpg` and `namelist.txt` will work normally
+
+### Option C — Open Directly (limited)
+
+Simply double-click `index.html` to open it in a browser. All features work **except** auto-loading of `default_background.jpg` and `namelist.txt`, because browsers block local file access via `fetch()` for security reasons. You can still upload files manually.
+
+---
+
+## Tutorial
+
+### Step 1 — Load a Certificate Background
+
+WINNIE supports two ways to load a background:
+
+**Auto-load (server setup)**
+Place a file named `default_background.jpg` in the same folder as `index.html`. It will be detected and loaded automatically on startup.
+
+**Manual upload**
+In the **Background** section on the left panel, click the upload zone or drag and drop a JPG or PNG file onto it. An A4 portrait ratio (210 × 297 mm) is recommended for best results.
+
+Once loaded, the background will immediately appear in the **Live Preview** panel on the right.
+
+---
+
+### Step 2 — Fill in Event Details
+
+Expand the **Event Details** section and fill in:
+
+| Field | Description | Example |
+|---|---|---|
+| Event Title | Name of the course or event | `KURSUS PEMANTAPAN KLINIKAL` |
+| Organizer | Organising unit or department | `UNIT LATIHAN DALAM PERKHIDMATAN` |
+| Location | Venue (optional, hidden by default) | `ILKKM TAWAU` |
+| Date From | Start date of the event | `2025-10-12` |
+| Date To | End date of the event (optional) | `2025-10-14` |
+| Serial Prefix | Prefix for serial numbers | `ILKKMT/2025/` |
+| Starting # | First serial number in the sequence | `1` |
+
+**Date formatting is automatic:**
+- Single day: `12 October 2025`
+- Same month: `12 – 14 October 2025`
+- Different months: `12 October – 3 November 2025`
+
+---
+
+### Step 3 — Configure Typography
+
+Expand the **Typography** section to set:
+
+- **Text Colour** — click the colour swatch or type a hex code (e.g. `#1a1a2e`)
+- **Font Family** — choose between Helvetica, Times New Roman, or Courier
+
+These settings apply to all text fields on every certificate.
+
+---
+
+### Step 4 — Adjust Field Positions
+
+Expand **Field Positions** to fine-tune the placement of each text element on the certificate.
+
+| Field | Default Y (mm) | Default Size | Visible by Default |
+|---|---|---|---|
+| Staff Name | 148 | 20pt | ✅ |
+| Event Title | 170 | 14pt | ✅ |
+| Date | 190 | 13pt | ✅ |
+| Organizer | 210 | 12pt | ✅ |
+| Location | 225 | 12pt | ❌ |
+| Serial Number | 278 | 8pt | ✅ |
+
+For each field you can:
+- **Toggle visibility** using the checkbox on the left
+- **Y (mm)** — distance from the top of the page (A4 is 297 mm tall)
+- **pt** — font size in points
+
+> 💡 Changes reflect instantly in the Live Preview. Use the ◀ ▶ arrows to cycle through different names and check alignment before generating.
+
+---
+
+### Step 5 — Load the Name List
+
+WINNIE supports three ways to load names:
+
+**Auto-load (server setup)**
+Place a file named `namelist.txt` in the same folder as `index.html`. It will be detected, loaded into the textarea, and applied automatically on startup.
+
+**Upload a file**
+In the **Staff List** section, click the upload zone and select a `.txt` or `.csv` file.
+
+**Type manually**
+Type or paste names directly into the textarea — one name per line — then click **Apply List**.
+
+**Supported formats:**
+```
+# One name per line
+JOHN DOE
+JANE SMITH
+AHMAD BIN ALI
+SITI BINTI IBRAHIM
+
+# Or comma-separated on one line
+JOHN DOE, JANE SMITH, AHMAD BIN ALI
+```
+
+Names are automatically converted to uppercase and deduplicated.
+
+---
+
+### Step 6 — Select Recipients
+
+Once the name list is applied, a scrollable checklist appears. Use the buttons to manage selection:
+
+- **Select All** — tick everyone
+- **None** — untick everyone
+- **Invert** — flip the current selection
+
+You can also click individual names to toggle them. The header badge updates in real time to show how many are selected.
+
+---
+
+### Step 7 — Preview
+
+The **Live Preview** panel on the right shows a full A4 rendering of the certificate for the currently previewed person. Use the **◀ ▶** navigation buttons to browse through the name list and verify that text is correctly positioned on your background template before generating.
+
+---
+
+### Step 8 — Generate Certificates
+
+At the bottom of the preview panel:
+
+1. Check **Bundle as ZIP** to download all certificates in a single ZIP file (recommended for bulk generation). Uncheck to download individual PDFs one by one.
+2. Click **⬇ Generate Certificates**.
+3. A progress overlay will appear showing the current name being processed and overall progress.
+4. Once complete, the ZIP file (or individual PDFs) will be downloaded automatically.
+
+**Output file naming:**
+- Individual PDF: `EVENTNAME-STAFF_NAME.pdf`
+- ZIP archive: `EVENTNAME-YYYY-MM-DD.zip`
+
+---
+
+## Backup & Restore Dataset
+
+WINNIE can save and restore your entire working setup — useful for recurring courses or sharing configurations between team members.
+
+### Backup Dataset
+
+Click **⬇ Backup Dataset** in the top-right header. A ZIP file will be downloaded containing:
+
+- `certforge-data.json` — all event details, typography, field positions, and the full staff list
+- `background.jpg` / `background.png` — the certificate background image (if loaded)
+
+The backup file is named: `EVENTNAME-backup-YYYY-MM-DD.zip`
+
+### Restore Dataset
+
+Click **⬆ Restore Dataset** and select a previously saved backup ZIP. WINNIE will restore:
+
+- All event fields and serial settings
+- Text colour and font family
+- All field Y-positions, font sizes, and visibility states
+- The staff name list and selection state
+- The background image
+
+> ✅ Backup files are fully self-contained — share them with colleagues to replicate your exact setup.
+
+---
+
+## Troubleshooting
+
+**Background or name list not auto-loading**
+Auto-loading requires the HTML to be served over HTTP. Opening the file directly as `file://` will not work. Use a web server (Apache, Nginx) or VS Code Live Server.
+
+**Text is misaligned on the certificate**
+Adjust the Y-position values in **Field Positions**. Preview with several different names before bulk generating, as name length can affect visual balance.
+
+**PDF text colour looks wrong**
+Ensure the hex code in **Typography → Text Colour** matches your certificate design. Light colours (e.g. white `#ffffff`) work better on dark backgrounds.
+
+**Names appear in wrong case**
+All names are auto-converted to uppercase. If you need mixed case, this behaviour is by design for consistency across certificates.
+
+**Restore Dataset doesn't load my background**
+The backup ZIP must have been created by WINNIE's **Backup Dataset** function. Manually created ZIPs will not be recognised.
+
+---
+
+## Technologies Used
+
+| Library | Purpose |
+|---|---|
+| [jsPDF](https://github.com/parallax/jsPDF) | PDF generation |
+| [JSZip](https://stuk.github.io/jszip/) | ZIP creation and extraction |
+| [FileSaver.js](https://github.com/eligrey/FileSaver.js/) | File download trigger |
+| [Google Fonts](https://fonts.google.com/) | DM Serif Display, DM Mono, DM Sans |
+
+No npm. No build step. No backend. Everything loads from CDN.
+
+---
+
+## Browser Support
+
+Chrome and Edge are recommended. Firefox and Safari are supported. A modern browser with ES6+ and Canvas API support is required.
+
+---
+
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE) for details.
+
+---
+
+*Built for Institut Latihan Kementerian Kesihatan Malaysia (ILKKM) and healthcare training institutions.*
