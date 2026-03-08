@@ -1316,7 +1316,16 @@ function renderStaffList() {
 
 function toggleStaff(i) {
   staffSelected[i] = !staffSelected[i];
-  if (previewPersonIndex === i) updatePreview();
+  if (staffSelected[i]) {
+    previewPersonIndex = i;
+  } else {
+    // Move to next checked person, or previous if none after
+    const selected = staffSelected.map((s, idx) => s ? idx : -1).filter(idx => idx !== -1);
+    if (selected.length) {
+      previewPersonIndex = selected.find(idx => idx > i) ?? selected[selected.length - 1];
+    }
+  }
+  updatePreview();
   filterStaffList();
 }
 
@@ -1455,13 +1464,17 @@ function formatDateRange() {
 
 // ─── PREVIEW ─────────────────────────────────────────────────────────────────
 function prevPerson() {
-  if (!staffNames.length) return;
-  previewPersonIndex = (previewPersonIndex - 1 + staffNames.length) % staffNames.length;
+  const selected = staffSelected.map((s, i) => s ? i : -1).filter(i => i !== -1);
+  if (!selected.length) return;
+  const pos = selected.indexOf(previewPersonIndex);
+  previewPersonIndex = pos <= 0 ? selected[selected.length - 1] : selected[pos - 1];
   updatePreview();
 }
 function nextPerson() {
-  if (!staffNames.length) return;
-  previewPersonIndex = (previewPersonIndex + 1) % staffNames.length;
+  const selected = staffSelected.map((s, i) => s ? i : -1).filter(i => i !== -1);
+  if (!selected.length) return;
+  const pos = selected.indexOf(previewPersonIndex);
+  previewPersonIndex = pos === -1 || pos >= selected.length - 1 ? selected[0] : selected[pos + 1];
   updatePreview();
 }
 
@@ -1470,10 +1483,13 @@ function updatePreview() {
   const personName = staffNames[previewPersonIndex] || 'SAMPLE NAME';
   const labelEl = document.getElementById('previewPersonLabel');
 
-  if (staffNames.length > 0) {
-    labelEl.textContent = `${previewPersonIndex + 1} / ${staffNames.length}`;
-  } else {
+  const selectedIndices = staffSelected.map((s, i) => s ? i : -1).filter(i => i !== -1);
+  const noSelection = selectedIndices.length === 0;
+  if (noSelection) {
     labelEl.textContent = 'Preview';
+  } else {
+    const pos = selectedIndices.indexOf(previewPersonIndex) + 1;
+    labelEl.textContent = `${pos} / ${selectedIndices.length}`;
   }
 
   const canvas = document.createElement('canvas');
@@ -1488,6 +1504,15 @@ function updatePreview() {
   const textColor = document.getElementById('textColor').value || '#1a1a2e';
   const fontFam   = document.getElementById('fontFamily').value || 'helvetica';
 
+  const drawNoSelection = () => {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(0, 0, A4_W, A4_H);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No names selected', A4_W / 2, A4_H / 2);
+  };
+
   const draw = () => {
     ctx.clearRect(0, 0, A4_W, A4_H);
 
@@ -1495,6 +1520,7 @@ function updatePreview() {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, A4_W, A4_H);
+        if (noSelection) { drawNoSelection(); finishPreview(canvas, wrap); return; }
         drawFields(ctx, personName, serialNum, dateStr, textColor, A4_W, A4_H);
         finishPreview(canvas, wrap);
       };
@@ -1509,6 +1535,7 @@ function updatePreview() {
       ctx.strokeStyle = '#d9ba80';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(34, 34, A4_W - 68, A4_H - 68);
+      if (noSelection) { drawNoSelection(); finishPreview(canvas, wrap); return; }
       drawFields(ctx, personName, serialNum, dateStr, textColor, A4_W, A4_H);
       finishPreview(canvas, wrap);
     }
@@ -1843,7 +1870,7 @@ async function restoreSet(event) {
       staffCustomData = data.staff.customData || {};
       const ta = data.staff.textarea || staffNames.join('\n');
       document.getElementById('staffTextarea').value = ta;
-      previewPersonIndex = 0;
+      previewPersonIndex = staffSelected.indexOf(true);
 
       // Show CSV info if custom fields exist
       const hasCustom = FIELDS.some(f => f.isCustom);
