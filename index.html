@@ -757,15 +757,16 @@
     <span class="logo-sub">Web-based Institutional Nursing Name-list Issuance of E-Certificates</span>
   </div>
   <div class="header-actions">
-    <span id="headerCount" class="badge">0 selected</span>
+    <span id="headerCount" class="badge" style="margin:2px 0 0 0">0 selected</span>
     <div class="btn-divider"></div>
-    <button class="btn btn-backup btn-sm" onclick="backupSet()" title="Save all settings + background + staff list as a ZIP">
-      <span>⬇</span> Backup Dataset
+    <span style="padding:3px 0 0 0"><button class="btn btn-backup btn-sm" onclick="backupSet()" title="Save all settings + background + staff list as a ZIP">
+      Backup Dataset
     </button>
     <label class="btn btn-restore btn-sm" title="Restore from a previously saved backup ZIP">
-      <span>⬆</span> Restore Dataset
+      Restore Dataset
       <input type="file" id="restoreFile" accept=".zip" onchange="restoreSet(event)" style="display:none">
     </label>
+    </span>
     <div class="btn-divider"></div>
     <button class="btn btn-ghost btn-sm" onclick="resetAll()">↺ Reset</button>
   </div>
@@ -856,7 +857,6 @@
             <option value="courier">Courier</option>
           </select>
         </div>
-        <p class="tip">💡 Adjust X (mm from left), Y (mm from top) and font size for each field below. A4 is 210mm wide × 297mm tall. X=105 is centered.</p>
       </div>
     </div>
 
@@ -867,20 +867,27 @@
         <span class="section-toggle open" id="toggle-staff">▲</span>
       </div>
       <div class="section-body open" id="body-staff">
-        <div class="upload-zone" style="margin-bottom:12px">
+        <div class="upload-zone" id="staffUploadZone" style="margin-bottom:12px">
           <input type="file" id="staffFile" accept=".txt,.csv" onchange="loadStaffFile(event)">
           <div class="upload-icon">📋</div>
           <div class="upload-text">Upload .txt or .csv file</div>
           <div class="upload-hint">CSV with headers: first column = Name, extra columns become certificate fields</div>
         </div>
-        <div class="field-row">
-          <label>Or type names manually (one per line)</label>
-          <textarea id="staffTextarea" placeholder="JOHN DOE&#10;JANE SMITH&#10;AHMAD BIN ALI"></textarea>
+        <div id="staffFileLoaded" style="display:none; margin-bottom:12px; padding:10px 12px; background:var(--surface2); border:1px solid rgba(200,169,110,0.35); border-radius:var(--radius); align-items:center; gap:8px;">
+          <span style="font-size:15px; flex-shrink:0">📋</span>
+          <span id="staffFileName" style="flex:1; font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace;"></span>
+          <button onclick="clearStaffFile()" title="Remove file" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
         </div>
-        <button class="btn btn-ghost btn-sm" style="width:100%; margin-bottom:10px" onclick="applyStaffList()">Apply List</button>
+        <div id="manualInputGroup">
+          <div class="field-row">
+            <label>Or type names manually (one per line)</label>
+            <textarea id="staffTextarea" placeholder="JOHN DOE&#10;JANE SMITH&#10;AHMAD BIN ALI"></textarea>
+          </div>
+          <button id="applyListBtn" class="btn btn-ghost btn-sm" style="width:100%; margin-bottom:10px" onclick="applyStaffList()">Apply List</button>
+        </div>
 
         <div id="csvColumnsInfo" style="display:none; margin-bottom:10px;">
-          <p class="tip">📊 CSV columns detected — extra fields added to Field Positions below.</p>
+          <p class="tip">CSV columns detected — extra fields added to Field Positions below.</p>
         </div>
 
         <div class="btn-group" style="margin-bottom:8px">
@@ -912,6 +919,7 @@
         <span class="section-toggle open" id="toggle-fields">▲</span>
       </div>
       <div class="section-body open" id="body-fields">
+        <p class="tip" style="margin: 0px 0px 10px 0px;">💡 Adjust X (mm from left), Y (mm from top) and font size for each field below. A4 is 210mm wide × 297mm tall. X=105 is centered.</p>
         <div id="fieldControls"></div>
       </div>
     </div>
@@ -935,13 +943,14 @@
       </div>
     </div>
     <div class="generate-bar">
+      <label class="checkbox-wrap">WINNIE v1.0.1-beta.1</label>
+      <div style="flex:1"></div>
       <label class="checkbox-wrap">
         <input type="checkbox" id="zipAll" checked>
         Bundle as ZIP
       </label>
-      <div style="flex:1"></div>
       <button class="btn btn-success btn-lg" onclick="generateAll()">
-        ⬇ Generate Certificates
+        Generate Certificates
       </button>
     </div>
   </div>
@@ -1156,9 +1165,13 @@ function loadStaffFile(event) {
     if (csvData && csvData.headers.length >= 2) {
       // Multi-column CSV detected
       applyCSVData(csvData);
+      setManualInputDisabled(true);
+      showStaffFileLoaded(file.name);
       toast(`CSV loaded: ${csvData.dataRows.length} rows, ${csvData.headers.length} columns`, 'success');
     } else {
       // Plain text / single-column — standard behaviour
+      setManualInputDisabled(false);
+      hideStaffFileLoaded();
       document.getElementById('staffTextarea').value = text;
       clearCustomFields();
       applyStaffList();
@@ -1166,6 +1179,37 @@ function loadStaffFile(event) {
     }
   };
   reader.readAsText(file);
+}
+
+function setManualInputDisabled(disabled) {
+  document.getElementById('manualInputGroup').style.display = disabled ? 'none' : '';
+}
+
+function showStaffFileLoaded(name) {
+  document.getElementById('staffUploadZone').style.display = 'none';
+  document.getElementById('staffFileName').textContent = name;
+  document.getElementById('staffFileLoaded').style.display = 'flex';
+}
+
+function hideStaffFileLoaded() {
+  document.getElementById('staffUploadZone').style.display = '';
+  document.getElementById('staffFileLoaded').style.display = 'none';
+}
+
+function clearStaffFile() {
+  if (!confirm('Remove the loaded file? Custom field data will be lost.')) return;
+  document.getElementById('staffFile').value = '';
+  hideStaffFileLoaded();
+  setManualInputDisabled(false);
+  clearCustomFields();
+  staffNames = [];
+  staffSelected = [];
+  staffCustomData = {};
+  document.getElementById('staffTextarea').value = '';
+  renderStaffList();
+  updatePreview();
+  updateHeaderCount();
+  toast('CSV removed', 'info');
 }
 
 function clearCustomFields() {
@@ -1347,7 +1391,7 @@ function renderFieldControls() {
     let separator = '';
     if (f.isCustom && !hasCustom) {
       hasCustom = true;
-      separator = `<div style="padding:6px 0 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:600; border-top:1px dashed var(--border); margin-top:6px;">📊 CSV Custom Fields</div>`;
+      separator = `<div style="padding:16px 0 16px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:600; border-top:1px dashed var(--border); margin-top:6px;">CSV Custom Fields</div>`;
     }
     return `${separator}
     <div class="field-control" ${f.isCustom ? 'style="border-color:rgba(200,169,110,0.25);"' : ''}>
@@ -1654,7 +1698,15 @@ function resetAll() {
   document.getElementById('location').value = '';
   document.getElementById('serialMain').value = 'CERT/2025/';
   document.getElementById('serialStart').value = '1';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dateFrom').value = today;
+  document.getElementById('dateTo').value = '';
+  document.getElementById('textColor').value = '#1a1a2e';
+  document.getElementById('textColorHex').value = '#1a1a2e';
+  document.getElementById('fontFamily').value = 'helvetica';
   document.getElementById('csvColumnsInfo').style.display = 'none';
+  hideStaffFileLoaded();
+  setManualInputDisabled(false);
   renderFieldControls();
   renderStaffList();
   updatePreview();
@@ -1796,6 +1848,14 @@ async function restoreSet(event) {
       // Show CSV info if custom fields exist
       const hasCustom = FIELDS.some(f => f.isCustom);
       document.getElementById('csvColumnsInfo').style.display = hasCustom ? 'block' : 'none';
+
+      if (hasCustom) {
+        showStaffFileLoaded(file.name + ' (backup)');
+        setManualInputDisabled(true);
+      } else {
+        hideStaffFileLoaded();
+        setManualInputDisabled(false);
+      }
 
       renderStaffList();
       updateHeaderCount();
