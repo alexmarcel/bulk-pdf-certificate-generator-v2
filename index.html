@@ -409,15 +409,15 @@
 
   .field-inputs {
     display: flex;
-    gap: 5px;
+    gap: 4px;
   }
 
   .field-mini {
-    width: 52px !important;
+    width: 46px !important;
     text-align: center;
     font-family: 'DM Mono', monospace;
-    font-size: 12px !important;
-    padding: 4px 6px !important;
+    font-size: 11px !important;
+    padding: 4px 4px !important;
   }
 
   .field-mini-label {
@@ -856,18 +856,7 @@
             <option value="courier">Courier</option>
           </select>
         </div>
-        <p class="tip">💡 Adjust Y-position (mm from top) and font size for each field below. Changes reflect live in the preview.</p>
-      </div>
-    </div>
-
-    <!-- SECTION: Field Positions -->
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('fields')">
-        <span class="section-label"><span class="dot"></span> Field Positions</span>
-        <span class="section-toggle open" id="toggle-fields">▲</span>
-      </div>
-      <div class="section-body open" id="body-fields">
-        <div id="fieldControls"></div>
+        <p class="tip">💡 Adjust X (mm from left), Y (mm from top) and font size for each field below. A4 is 210mm wide × 297mm tall. X=105 is centered.</p>
       </div>
     </div>
 
@@ -882,13 +871,17 @@
           <input type="file" id="staffFile" accept=".txt,.csv" onchange="loadStaffFile(event)">
           <div class="upload-icon">📋</div>
           <div class="upload-text">Upload .txt or .csv file</div>
-          <div class="upload-hint">One name per line, or comma-separated</div>
+          <div class="upload-hint">CSV with headers: first column = Name, extra columns become certificate fields</div>
         </div>
         <div class="field-row">
           <label>Or type names manually (one per line)</label>
           <textarea id="staffTextarea" placeholder="JOHN DOE&#10;JANE SMITH&#10;AHMAD BIN ALI"></textarea>
         </div>
         <button class="btn btn-ghost btn-sm" style="width:100%; margin-bottom:10px" onclick="applyStaffList()">Apply List</button>
+
+        <div id="csvColumnsInfo" style="display:none; margin-bottom:10px;">
+          <p class="tip">📊 CSV columns detected — extra fields added to Field Positions below.</p>
+        </div>
 
         <div class="btn-group" style="margin-bottom:8px">
           <button class="btn btn-ghost btn-sm" onclick="selectAll()">Select All</button>
@@ -909,6 +902,17 @@
 
         <div class="staff-list-container" id="staffList"></div>
         <div class="staff-count" id="staffCount">0 people, 0 selected</div>
+      </div>
+    </div>
+
+    <!-- SECTION: Field Positions -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('fields')">
+        <span class="section-label"><span class="dot"></span> Field Positions</span>
+        <span class="section-toggle open" id="toggle-fields">▲</span>
+      </div>
+      <div class="section-body open" id="body-fields">
+        <div id="fieldControls"></div>
       </div>
     </div>
 
@@ -964,17 +968,20 @@
 let bgImage = null;
 let staffNames = [];
 let staffSelected = [];
+let staffCustomData = {}; // { "PERSON NAME": { "col_header": "value", ... } }
 let previewPersonIndex = 0;
 let previewCanvas = null;
 
-const FIELDS = [
-  { id: 'name',       label: 'Staff Name',    yMm: 123, fontSize: 20, visible: true,  bold: true  },
-  { id: 'title',      label: 'Event Title',   yMm: 150, fontSize: 14, visible: true,  bold: false },
-  { id: 'date',       label: 'Date',          yMm: 178, fontSize: 13, visible: true,  bold: false },
-  { id: 'organizer',  label: 'Organizer',     yMm: 201, fontSize: 12, visible: true,  bold: false },
-  { id: 'location',   label: 'Location',      yMm: 225, fontSize: 12, visible: false, bold: false },
-  { id: 'serial',     label: 'Serial Number', yMm: 278, fontSize: 8,  visible: true,  bold: false },
+const BASE_FIELDS = [
+  { id: 'name',       label: 'Staff Name',    xMm: 105, yMm: 123, fontSize: 20, visible: true,  bold: true,  isCustom: false },
+  { id: 'title',      label: 'Event Title',   xMm: 105, yMm: 150, fontSize: 14, visible: true,  bold: false, isCustom: false },
+  { id: 'date',       label: 'Date',          xMm: 105, yMm: 178, fontSize: 13, visible: true,  bold: false, isCustom: false },
+  { id: 'organizer',  label: 'Organizer',     xMm: 105, yMm: 201, fontSize: 12, visible: true,  bold: false, isCustom: false },
+  { id: 'location',   label: 'Location',      xMm: 105, yMm: 225, fontSize: 12, visible: false, bold: false, isCustom: false },
+  { id: 'serial',     label: 'Serial Number', xMm: 105, yMm: 278, fontSize: 8,  visible: true,  bold: false, isCustom: false },
 ];
+
+let FIELDS = [...BASE_FIELDS];
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1102,17 +1109,144 @@ function loadBackground(event) {
 }
 
 // ─── STAFF LIST ───────────────────────────────────────────────────────────────
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { result.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function detectCSVWithHeaders(text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+
+  const firstRow = parseCSVLine(lines[0]);
+  // Needs at least 2 columns to be considered a multi-column CSV
+  if (firstRow.length < 2) return null;
+
+  // Check that the first row looks like headers (not all-caps names)
+  // Heuristic: if second+ columns exist, treat first row as headers
+  const headers = firstRow.map(h => h.trim());
+  const dataRows = lines.slice(1).map(l => parseCSVLine(l)).filter(r => r[0]?.trim());
+  return { headers, dataRows };
+}
+
 function loadStaffFile(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     let text = e.target.result.replace(/^\uFEFF/, '');
-    document.getElementById('staffTextarea').value = text;
-    applyStaffList();
-    toast('Staff list loaded: ' + file.name, 'success');
+    const isCSV = file.name.toLowerCase().endsWith('.csv');
+    const csvData = isCSV ? detectCSVWithHeaders(text) : null;
+
+    if (csvData && csvData.headers.length >= 2) {
+      // Multi-column CSV detected
+      applyCSVData(csvData);
+      toast(`CSV loaded: ${csvData.dataRows.length} rows, ${csvData.headers.length} columns`, 'success');
+    } else {
+      // Plain text / single-column — standard behaviour
+      document.getElementById('staffTextarea').value = text;
+      clearCustomFields();
+      applyStaffList();
+      toast('Staff list loaded: ' + file.name, 'success');
+    }
   };
   reader.readAsText(file);
+}
+
+function clearCustomFields() {
+  staffCustomData = {};
+  FIELDS = [...BASE_FIELDS];
+  document.getElementById('csvColumnsInfo').style.display = 'none';
+  renderFieldControls();
+}
+
+function applyCSVData(csvData) {
+  const { headers, dataRows } = csvData;
+  const nameColIndex = 0; // First column is always Name
+
+  // Reset custom fields — keep only BASE_FIELDS
+  FIELDS = BASE_FIELDS.map(f => ({ ...f }));
+
+  // Create custom fields from extra columns
+  const lastBaseY = Math.max(...BASE_FIELDS.filter(f => f.id !== 'serial').map(f => f.yMm));
+  const serialField = BASE_FIELDS.find(f => f.id === 'serial');
+  const customStartY = lastBaseY + 20;
+
+  for (let c = 1; c < headers.length; c++) {
+    const colName = headers[c].trim();
+    if (!colName) continue;
+    const fieldId = 'csv_' + colName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const yPos = customStartY + (c - 1) * 18;
+
+    // Insert before serial (if serial exists), otherwise append
+    const serialIdx = FIELDS.findIndex(f => f.id === 'serial');
+    const newField = {
+      id:       fieldId,
+      label:    colName,
+      xMm:      105,
+      yMm:      yPos > 270 ? 250 : yPos,
+      fontSize: 12,
+      visible:  true,
+      bold:     false,
+      isCustom: true,
+      csvCol:   c,
+      csvHeader: colName,
+    };
+
+    if (serialIdx >= 0) {
+      FIELDS.splice(serialIdx, 0, newField);
+    } else {
+      FIELDS.push(newField);
+    }
+  }
+
+  // Build staff data
+  staffCustomData = {};
+  const names = [];
+  dataRows.forEach(row => {
+    const name = (row[nameColIndex] || '').trim().toUpperCase();
+    if (!name) return;
+    names.push(name);
+
+    const personData = {};
+    for (let c = 1; c < headers.length; c++) {
+      const colName = headers[c].trim();
+      if (!colName) continue;
+      personData[colName] = (row[c] || '').trim();
+    }
+    staffCustomData[name] = personData;
+  });
+
+  staffNames = [...new Set(names)];
+  staffSelected = staffNames.map(() => true);
+  previewPersonIndex = 0;
+
+  // Update textarea with names only (for display)
+  document.getElementById('staffTextarea').value = staffNames.join('\n');
+
+  // Show CSV info banner
+  const extraCols = headers.slice(1).filter(h => h.trim());
+  document.getElementById('csvColumnsInfo').style.display = 'block';
+
+  renderFieldControls();
+  renderStaffList();
+  updatePreview();
+  updateHeaderCount();
 }
 
 function applyStaffList() {
@@ -1208,15 +1342,26 @@ function updateHeaderCount() {
 // ─── FIELD CONTROLS ───────────────────────────────────────────────────────────
 function renderFieldControls() {
   const container = document.getElementById('fieldControls');
-  container.innerHTML = FIELDS.map((f, i) => `
-    <div class="field-control">
+  let hasCustom = false;
+  container.innerHTML = FIELDS.map((f, i) => {
+    let separator = '';
+    if (f.isCustom && !hasCustom) {
+      hasCustom = true;
+      separator = `<div style="padding:6px 0 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:600; border-top:1px dashed var(--border); margin-top:6px;">📊 CSV Custom Fields</div>`;
+    }
+    return `${separator}
+    <div class="field-control" ${f.isCustom ? 'style="border-color:rgba(200,169,110,0.25);"' : ''}>
       <input type="checkbox" id="fvis-${f.id}" ${f.visible ? 'checked' : ''} onchange="updateField(${i},'visible',this.checked)">
-      <span class="field-name">${f.label}</span>
+      <span class="field-name">${f.label}${f.isCustom ? ' <span style="font-size:9px;color:var(--text-dim)">(CSV)</span>' : ''}</span>
       <div>
         <div class="field-inputs">
           <div>
+            <input type="number" class="field-mini" id="fx-${f.id}" value="${f.xMm}" min="0" max="210" step="1" oninput="updateField(${i},'xMm',parseFloat(this.value))">
+            <div class="field-mini-label">X mm</div>
+          </div>
+          <div>
             <input type="number" class="field-mini" id="fy-${f.id}" value="${f.yMm}" min="1" max="290" step="1" oninput="updateField(${i},'yMm',parseFloat(this.value))">
-            <div class="field-mini-label">Y (mm)</div>
+            <div class="field-mini-label">Y mm</div>
           </div>
           <div>
             <input type="number" class="field-mini" id="fsize-${f.id}" value="${f.fontSize}" min="6" max="48" step="1" oninput="updateField(${i},'fontSize',parseFloat(this.value))">
@@ -1224,8 +1369,8 @@ function renderFieldControls() {
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function updateField(i, key, val) {
@@ -1336,6 +1481,7 @@ function finishPreview(canvas, wrap) {
 
 function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
   const mmToY = mm => (mm / 297) * H;
+  const mmToX = mm => (mm / 210) * W;
   ctx.textAlign = 'center';
 
   const fontFam = document.getElementById('fontFamily').value || 'sans-serif';
@@ -1344,7 +1490,7 @@ function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
 
   ctx.fillStyle = textColor;
 
-  const vals = {
+  const baseVals = {
     name:      personName,
     title:     document.getElementById('eventTitle').value,
     date:      dateStr,
@@ -1353,13 +1499,21 @@ function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
     serial:    serialNum,
   };
 
+  // Merge custom field values from CSV data
+  const customData = staffCustomData[personName] || {};
+
   FIELDS.forEach(f => {
     if (!f.visible) return;
-    const v = vals[f.id];
+    let v;
+    if (f.isCustom) {
+      v = customData[f.csvHeader] || '';
+    } else {
+      v = baseVals[f.id];
+    }
     if (!v) return;
     const ptToPx = f.fontSize * (H / 297 / 3.779528);
-    ctx.font = `${f.id === 'name' ? 'bold ' : ''}${ptToPx}px ${canvasFontFam}`;
-    ctx.fillText(v, W / 2, mmToY(f.yMm));
+    ctx.font = `${f.bold ? 'bold ' : ''}${ptToPx}px ${canvasFontFam}`;
+    ctx.fillText(v, mmToX(f.xMm), mmToY(f.yMm));
   });
 }
 
@@ -1420,13 +1574,21 @@ async function generateAll() {
       serial:    serialNum,
     };
 
+    // Merge custom field values from CSV data
+    const customData = staffCustomData[name] || {};
+
     FIELDS.forEach(f => {
       if (!f.visible) return;
-      const v = vals[f.id];
+      let v;
+      if (f.isCustom) {
+        v = customData[f.csvHeader] || '';
+      } else {
+        v = vals[f.id];
+      }
       if (!v) return;
       pdf.setFontSize(f.fontSize);
       pdf.setFont(fontFam, f.bold ? 'bold' : 'normal');
-      pdf.text(v, 105, f.yMm, { align: 'center' });
+      pdf.text(v, f.xMm, f.yMm, { align: 'center' });
     });
 
     const title = (document.getElementById('eventTitle').value || 'CERT').replace(/\s+/g,'_');
@@ -1480,7 +1642,9 @@ function resetAll() {
   bgImage = null;
   staffNames = [];
   staffSelected = [];
+  staffCustomData = {};
   previewPersonIndex = 0;
+  FIELDS = BASE_FIELDS.map(f => ({ ...f }));
   document.getElementById('bgName').textContent = '';
   document.getElementById('bgFile').value = '';
   document.getElementById('staffTextarea').value = '';
@@ -1490,11 +1654,8 @@ function resetAll() {
   document.getElementById('location').value = '';
   document.getElementById('serialMain').value = 'CERT/2025/';
   document.getElementById('serialStart').value = '1';
-  FIELDS.forEach((f, i) => {
-    document.getElementById(`fy-${f.id}`).value = f.yMm;
-    document.getElementById(`fsize-${f.id}`).value = f.fontSize;
-    document.getElementById(`fvis-${f.id}`).checked = f.visible;
-  });
+  document.getElementById('csvColumnsInfo').style.display = 'none';
+  renderFieldControls();
   renderStaffList();
   updatePreview();
   toast('Reset complete', 'success');
@@ -1508,14 +1669,18 @@ async function backupSet() {
   const fieldSnapshot = FIELDS.map(f => ({
     id:       f.id,
     label:    f.label,
+    xMm:      parseFloat(document.getElementById(`fx-${f.id}`)?.value ?? f.xMm),
     yMm:      parseFloat(document.getElementById(`fy-${f.id}`)?.value ?? f.yMm),
     fontSize: parseFloat(document.getElementById(`fsize-${f.id}`)?.value ?? f.fontSize),
     visible:  document.getElementById(`fvis-${f.id}`)?.checked ?? f.visible,
     bold:     f.bold,
+    isCustom: f.isCustom || false,
+    csvCol:   f.csvCol ?? null,
+    csvHeader: f.csvHeader ?? null,
   }));
 
   const data = {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
     event: {
       title:       document.getElementById('eventTitle').value,
@@ -1532,9 +1697,10 @@ async function backupSet() {
     },
     fields: fieldSnapshot,
     staff: {
-      names:    staffNames,
-      selected: staffSelected,
-      textarea: document.getElementById('staffTextarea').value,
+      names:      staffNames,
+      selected:   staffSelected,
+      textarea:   document.getElementById('staffTextarea').value,
+      customData: staffCustomData,
     },
     background: {
       filename: document.getElementById('bgName').textContent.replace(/^✓\s*/, '') || null,
@@ -1599,24 +1765,38 @@ async function restoreSet(event) {
 
     // Restore field positions
     if (data.fields && Array.isArray(data.fields)) {
-      data.fields.forEach(saved => {
-        const idx = FIELDS.findIndex(f => f.id === saved.id);
-        if (idx < 0) return;
-        FIELDS[idx].yMm      = saved.yMm;
-        FIELDS[idx].fontSize = saved.fontSize;
-        FIELDS[idx].visible  = saved.visible;
-        FIELDS[idx].bold     = saved.bold ?? FIELDS[idx].bold;
+      // Rebuild FIELDS from scratch to include custom fields from backup
+      FIELDS = data.fields.map(saved => {
+        const base = BASE_FIELDS.find(f => f.id === saved.id);
+        return {
+          id:        saved.id,
+          label:     saved.label,
+          xMm:       saved.xMm ?? (base ? base.xMm : 105),
+          yMm:       saved.yMm,
+          fontSize:  saved.fontSize,
+          visible:   saved.visible,
+          bold:      saved.bold ?? (base ? base.bold : false),
+          isCustom:  saved.isCustom || false,
+          csvCol:    saved.csvCol ?? null,
+          csvHeader: saved.csvHeader ?? null,
+        };
       });
       renderFieldControls();
     }
 
     // Restore staff list
     if (data.staff) {
-      staffNames    = data.staff.names    || [];
-      staffSelected = data.staff.selected || staffNames.map(() => true);
+      staffNames      = data.staff.names    || [];
+      staffSelected   = data.staff.selected || staffNames.map(() => true);
+      staffCustomData = data.staff.customData || {};
       const ta = data.staff.textarea || staffNames.join('\n');
       document.getElementById('staffTextarea').value = ta;
       previewPersonIndex = 0;
+
+      // Show CSV info if custom fields exist
+      const hasCustom = FIELDS.some(f => f.isCustom);
+      document.getElementById('csvColumnsInfo').style.display = hasCustom ? 'block' : 'none';
+
       renderStaffList();
       updateHeaderCount();
     }
