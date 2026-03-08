@@ -23,14 +23,15 @@ Everything lives in a single `index.html` file. Drop it on a web server alongsid
 
 - 🖼️ **Custom certificate background** — upload any JPG/PNG template, or use the auto-generated white + gold border fallback
 - 👥 **Bulk name list** — upload a `.txt`/`.csv` file or type names manually
+- 📊 **CSV multi-column import** — extra columns in a CSV automatically become custom certificate fields with their own positioning controls
 - ✏️ **Live preview** — see exactly how each certificate will look before generating
-- ⚙️ **Field positioning** — adjust Y-position and font size for every field
+- ⚙️ **Field positioning** — adjust X-position, Y-position and font size for every field
 - 👁️ **Field visibility** — toggle individual fields on or off
 - 🎨 **Typography controls** — choose font family and text colour
 - 📅 **Smart date formatting** — automatically formats single and ranged dates
 - 🔢 **Auto-incrementing serial numbers** — with a customisable prefix
 - 📦 **ZIP export** — download all certificates in one ZIP file
-- 💾 **Backup & Restore Dataset** — save your entire setup (settings + background + name list) as a ZIP and restore it later
+- 💾 **Backup & Restore Dataset** — save your entire setup (settings + background + name list + custom fields) as a ZIP and restore it later
 - 🔍 **Name list search** — live search with highlighted matches
 - 🔽 **Name list filter** — filter the checklist by All, Checked, or Unchecked names
 - 🚀 **Auto-loading** — automatically loads `default_background.jpg` and `namelist.txt` from the same folder on startup
@@ -140,29 +141,7 @@ These settings apply to all text fields on every certificate.
 
 ---
 
-### Step 4 — Adjust Field Positions
-
-Expand **Field Positions** to fine-tune the placement of each text element on the certificate.
-
-| Field | Default Y (mm) | Default Size | Visible by Default |
-|---|---|---|---|
-| Staff Name | 123 | 20pt | ✅ |
-| Event Title | 150 | 14pt | ✅ |
-| Date | 178 | 13pt | ✅ |
-| Organizer | 201 | 12pt | ✅ |
-| Location | 225 | 12pt | ❌ |
-| Serial Number | 278 | 8pt | ✅ |
-
-For each field you can:
-- **Toggle visibility** using the checkbox on the left
-- **Y (mm)** — distance from the top of the page (A4 is 297 mm tall)
-- **pt** — font size in points
-
-> 💡 Changes reflect instantly in the Live Preview. Use the ◀ ▶ arrows to cycle through different names and check alignment before generating.
-
----
-
-### Step 5 — Load the Name List
+### Step 4 — Load the Name List
 
 WINNIE supports three ways to load names:
 
@@ -177,7 +156,7 @@ Type or paste names directly into the textarea — one name per line — then cl
 
 **Supported formats:**
 ```
-# One name per line
+# One name per line (plain text)
 JOHN DOE
 JANE SMITH
 AHMAD BIN ALI
@@ -191,7 +170,29 @@ Names are automatically converted to uppercase and deduplicated.
 
 ---
 
-### Step 6 — Select Recipients
+### Step 4a — CSV Multi-Column Import
+
+When you upload a `.csv` file with **two or more columns**, WINNIE treats the first row as headers and automatically creates custom certificate fields from every extra column beyond the first.
+
+**Example CSV:**
+```csv
+Name,Designation,IC Number,Department
+JOHN DOE,Staff Nurse,880101-XX-1234,Ward 3A
+JANE SMITH,Senior Nurse,750515-XX-5678,ICU
+AHMAD BIN ALI,Matron,700220-XX-9012,Emergency
+```
+
+In this example:
+- **Column 1 (Name)** — used as the staff name on each certificate
+- **Columns 2–4 (Designation, IC Number, Department)** — each becomes a new positionable field in the **Field Positions** section, tagged with `(CSV)` for easy identification
+
+Each person's unique values are stored and rendered on their individual certificate. A banner appears in the Staff List section confirming how many columns were detected.
+
+> 💡 Custom CSV fields are fully integrated — they appear in the live preview, in generated PDFs, and are preserved in backup/restore.
+
+---
+
+### Step 5 — Select Recipients
 
 Once the name list is applied, a scrollable checklist appears.
 
@@ -215,7 +216,7 @@ You can also click individual names to toggle them. The header badge updates in 
 
 ---
 
-### Step 7 — Search the Name List
+### Step 6 — Search the Name List
 
 Use the **search box** below the selection buttons to find names quickly.
 
@@ -224,6 +225,31 @@ Use the **search box** below the selection buttons to find names quickly.
 - The status bar shows the number of matches, e.g. `24 people, 18 selected (3 shown)`
 - Click **✕** to clear the search and return to the full list
 - Search and the filter dropdown work together — e.g. search `"ahmad"` while filtering to **✗ Unchecked** to find unselected people by name
+
+---
+
+### Step 7 — Adjust Field Positions
+
+Expand **Field Positions** to fine-tune the placement of each text element on the certificate. An A4 page is 210 mm wide × 297 mm tall.
+
+| Field | Default X (mm) | Default Y (mm) | Default Size | Visible by Default |
+|---|---|---|---|---|
+| Staff Name | 105 | 123 | 20pt | ✅ |
+| Event Title | 105 | 150 | 14pt | ✅ |
+| Date | 105 | 178 | 13pt | ✅ |
+| Organizer | 105 | 201 | 12pt | ✅ |
+| Location | 105 | 225 | 12pt | ❌ |
+| Serial Number | 105 | 278 | 8pt | ✅ |
+
+For each field you can:
+- **Toggle visibility** using the checkbox on the left
+- **X (mm)** — distance from the left edge of the page (105 = horizontally centred on A4)
+- **Y (mm)** — distance from the top of the page
+- **pt** — font size in points
+
+Any custom fields imported from a CSV will also appear here, tagged with `(CSV)`, under a separate **📊 CSV Custom Fields** divider.
+
+> 💡 Changes reflect instantly in the Live Preview. Use the ◀ ▶ arrows to cycle through different names and check alignment before generating.
 
 ---
 
@@ -256,7 +282,7 @@ WINNIE can save and restore your entire working setup — useful for recurring c
 
 Click **⬇ Backup Dataset** in the top-right header. A ZIP file will be downloaded containing:
 
-- `certforge-data.json` — all event details, typography, field positions, and the full staff list
+- `certforge-data.json` — all event details, typography, field positions (including X/Y and custom CSV fields), and the full staff list with per-person custom data
 - `background.jpg` / `background.png` — the certificate background image (if loaded)
 
 The backup file is named: `EVENTNAME-backup-YYYY-MM-DD.zip`
@@ -267,7 +293,8 @@ Click **⬆ Restore Dataset** and select a previously saved backup ZIP. WINNIE w
 
 - All event fields and serial settings
 - Text colour and font family
-- All field Y-positions, font sizes, and visibility states
+- All field X-positions, Y-positions, font sizes, and visibility states
+- Custom CSV fields and their per-person values
 - The staff name list and selection state
 - The background image
 
@@ -284,13 +311,16 @@ Auto-loading requires the HTML to be served over HTTP. Opening the file directly
 This is expected behaviour. If `default_background.jpg` is not found, WINNIE generates a white certificate with a gold border automatically. Upload a background image manually or place `default_background.jpg` in the same folder.
 
 **Text is misaligned on the certificate**
-Adjust the Y-position values in **Field Positions**. Preview with several different names before bulk generating, as name length can affect visual balance.
+Adjust the X and Y position values in **Field Positions**. X = 105 is the horizontal centre of an A4 page. Preview with several different names before bulk generating, as name length can affect visual balance.
 
 **PDF text colour looks wrong**
 Ensure the hex code in **Typography → Text Colour** matches your certificate design. Light colours (e.g. white `#ffffff`) work better on dark backgrounds.
 
 **Names appear in wrong case**
 All names are auto-converted to uppercase. If you need mixed case, this behaviour is by design for consistency across certificates.
+
+**CSV columns not detected**
+Ensure your CSV file has at least two columns and a header row. The first column is always treated as the name. Single-column CSVs and plain `.txt` files fall back to standard one-name-per-line mode.
 
 **Restore Dataset doesn't load my background**
 The backup ZIP must have been created by WINNIE's **Backup Dataset** function. Manually created ZIPs will not be recognised.
