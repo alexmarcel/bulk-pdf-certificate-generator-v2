@@ -1484,13 +1484,15 @@ function updatePreview() {
   const labelEl = document.getElementById('previewPersonLabel');
 
   const selectedIndices = staffSelected.map((s, i) => s ? i : -1).filter(i => i !== -1);
-  const noSelection = selectedIndices.length === 0;
-  if (noSelection) {
+  if (selectedIndices.length === 0) {
     labelEl.textContent = 'Preview';
   } else {
     const pos = selectedIndices.indexOf(previewPersonIndex) + 1;
     labelEl.textContent = `${pos} / ${selectedIndices.length}`;
   }
+
+  const noSelection = selectedIndices.length === 0;
+  const displayName = noSelection ? '' : personName;
 
   const canvas = document.createElement('canvas');
   canvas.id = 'previewCanvas';
@@ -1504,15 +1506,6 @@ function updatePreview() {
   const textColor = document.getElementById('textColor').value || '#1a1a2e';
   const fontFam   = document.getElementById('fontFamily').value || 'helvetica';
 
-  const drawNoSelection = () => {
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(0, 0, A4_W, A4_H);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No names selected', A4_W / 2, A4_H / 2);
-  };
-
   const draw = () => {
     ctx.clearRect(0, 0, A4_W, A4_H);
 
@@ -1520,8 +1513,7 @@ function updatePreview() {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, A4_W, A4_H);
-        if (noSelection) { drawNoSelection(); finishPreview(canvas, wrap); return; }
-        drawFields(ctx, personName, serialNum, dateStr, textColor, A4_W, A4_H);
+        drawFields(ctx, displayName, serialNum, dateStr, textColor, A4_W, A4_H);
         finishPreview(canvas, wrap);
       };
       img.src = bgImage;
@@ -1535,8 +1527,7 @@ function updatePreview() {
       ctx.strokeStyle = '#d9ba80';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(34, 34, A4_W - 68, A4_H - 68);
-      if (noSelection) { drawNoSelection(); finishPreview(canvas, wrap); return; }
-      drawFields(ctx, personName, serialNum, dateStr, textColor, A4_W, A4_H);
+      drawFields(ctx, displayName, serialNum, dateStr, textColor, A4_W, A4_H);
       finishPreview(canvas, wrap);
     }
   };
