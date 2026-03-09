@@ -16,7 +16,7 @@ WINNIE is a browser-based certificate generator designed for institutions that i
 
 Everything lives in a single `index.html` file. Drop it on a web server alongside your background image and name list, and it's ready to use.
 
-<img width="1202" height="893" alt="screenshot" src="https://github.com/user-attachments/assets/f85cf92c-0d2e-459a-bc3f-64176395a9df" />
+<img width="1304" height="946" alt="tent-tree" src="https://github.com/user-attachments/assets/5c45e802-b6e6-432e-a5aa-38fc28913b5d" />
 
 ---
 
