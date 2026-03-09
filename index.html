@@ -2119,7 +2119,7 @@ async function generateSinglePDF() {
   pdf.save(`${title}-${date}.pdf`);
 
   overlay.classList.remove('show');
-  toast(`✓ ${selected.length} certificate${selected.length > 1 ? 's' : ''} combined into one PDF!`, 'success');
+  toast(`${selected.length} certificate${selected.length > 1 ? 's' : ''} combined into one PDF!`, 'success');
 }
 
 // ─── DRAG & DROP ──────────────────────────────────────────────────────────────
