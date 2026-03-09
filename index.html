@@ -798,6 +798,151 @@
     border-left: 2px solid var(--accent);
     line-height: 1.5;
   }
+
+  /* ═══════════════════════════════════════════════
+     MOBILE LAYOUT  ≤768px
+     4 rows: header (fixed) | preview (fixed) | section (scroll) | tab bar (fixed)
+     ═══════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    html, body { overflow: hidden; height: 100%; }
+
+    /* ── Row 1: Header ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 300;
+      padding: 10px 14px;
+      height: 48px;
+      box-sizing: border-box;
+    }
+    .logo-sub { display: none; }
+    .logo-title { font-size: 18px; }
+    #headerBackupRestore { display: none !important; }
+
+    /* ── Layout container: fixed between header and tab bar ── */
+    .layout {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 48px;
+      bottom: 64px;
+      left: 0; right: 0;
+      overflow: hidden;
+    }
+
+    /* ── Row 2: Preview (panel-right) — ordered before panel-left ── */
+    .panel-right {
+      order: -1;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .preview-header {
+      padding: 6px 12px;
+      flex-shrink: 0;
+    }
+
+    .preview-wrap {
+      flex: none;
+      height: 34vh;
+      overflow: hidden;
+      padding: 6px 8px;
+    }
+
+    #previewCanvas {
+      max-height: 100% !important;
+      max-width: 100% !important;
+      width: auto !important;
+    }
+
+    .generate-bar { display: none; }
+
+    /* ── Row 3: Section content (panel-left, scrollable) ── */
+    .panel-left {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      border-right: none;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      margin-bottom: 100px;
+    }
+
+    .section-header { display: none; }
+
+    .section-body {
+      display: none !important;
+      padding: 14px 16px 20px;
+    }
+
+    #section-generate { display: block; }
+
+    /* ── Row 4: Tab bar (fixed at bottom) ── */
+    #mobileTabBar {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mob-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 2px;
+      color: var(--text-muted);
+      transition: color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mob-tab:active { background: var(--surface2); }
+    .mob-tab.active { color: var(--accent); }
+    .mob-tab[data-tab="generate"].active { color: var(--success); }
+
+    .mob-tab-icon { font-size: 18px; line-height: 1; }
+
+    .mob-tab-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── Utilities ── */
+    .staff-list-container { max-height: 36vh; }
+
+    .toast-container {
+      bottom: calc(72px + env(safe-area-inset-bottom));
+      right: 12px;
+      left: 12px;
+    }
+    .toast { width: 100%; }
+
+    .confirm-card { min-width: unset; width: calc(100vw - 32px); padding: 24px 20px; }
+    .progress-card { min-width: unset; width: calc(100vw - 32px); padding: 32px 24px; }
+  }
+
+  /* Desktop guard */
+  @media (min-width: 769px) {
+    #mobileTabBar { display: none; }
+    #section-generate { display: none; }
+  }
+
 </style>
 </head>
 <body>
@@ -809,16 +954,18 @@
   </div>
   <div class="header-actions">
     <span id="headerCount" class="badge" style="margin:2px 0 0 0">0 selected</span>
-    <div class="btn-divider"></div>
-    <span style="padding:3px 0 0 0"><button class="btn btn-backup btn-sm" onclick="backupSet()" title="Save all settings + background + staff list as a ZIP">
-      Backup Dataset
-    </button>
-    <label class="btn btn-restore btn-sm" title="Restore from a previously saved backup ZIP">
-      Restore Dataset
-      <input type="file" id="restoreFile" accept=".zip" onchange="restoreSet(event)" style="display:none">
-    </label>
+    <span id="headerBackupRestore" style="display:contents">
+      <div class="btn-divider"></div>
+      <span style="padding:3px 0 0 0"><button class="btn btn-backup btn-sm" onclick="backupSet()" title="Save all settings + background + staff list as a ZIP">
+        Backup Dataset
+      </button>
+      <label class="btn btn-restore btn-sm" title="Restore from a previously saved backup ZIP">
+        Restore Dataset
+        <input type="file" id="restoreFile" accept=".zip" onchange="restoreSet(event)" style="display:none">
+      </label>
+      </span>
+      <div class="btn-divider"></div>
     </span>
-    <div class="btn-divider"></div>
     <button class="btn btn-ghost btn-sm" onclick="resetAll()">↺ Reset</button>
   </div>
 </header>
@@ -979,6 +1126,30 @@
       </div>
     </div>
 
+    <!-- MOBILE-ONLY: Generate + Backup/Restore -->
+    <div id="section-generate">
+      <div class="section-body" id="body-generate">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;">WINNIE v1.0.1-beta.1</div>
+        <label class="checkbox-wrap" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" id="zipAllMobile" checked onchange="document.getElementById('zipAll').checked=this.checked;">
+          Bundle as ZIP
+        </label>
+        <button class="btn btn-success btn-lg" style="width:100%;margin-bottom:10px;" onclick="confirmGenerate('multi')" title="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
+          Download Certificates
+        </button>
+        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:20px;" onclick="confirmGenerate('single')" title="Combine all selected certificates into one multi-page PDF file and download it.">
+          Download as Single PDF
+        </button>
+        <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;flex-direction:column;gap:10px;">
+          <button class="btn btn-backup" style="width:100%;justify-content:center;" onclick="backupSet()">Backup Dataset</button>
+          <label class="btn btn-restore" style="width:100%;justify-content:center;cursor:pointer;">
+            Restore Dataset
+            <input type="file" accept=".zip" style="display:none;" onchange="restoreSet(event)">
+          </label>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- RIGHT PANEL -->
@@ -1001,7 +1172,7 @@
       <label class="checkbox-wrap">WINNIE v1.0.1-beta.1</label>
       <div style="flex:1"></div>
       <label class="checkbox-wrap">
-        <input type="checkbox" id="zipAll" checked>
+        <input type="checkbox" id="zipAll" checked onchange="const m=document.getElementById('zipAllMobile');if(m)m.checked=this.checked;">
         Bundle as ZIP
       </label>
       <button class="btn btn-success btn-lg" onclick="confirmGenerate('multi')" title="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
@@ -1042,6 +1213,34 @@
 <!-- TOAST -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- MOBILE TAB BAR -->
+<nav id="mobileTabBar" aria-label="Sections">
+  <button class="mob-tab active" data-tab="bg"       onclick="switchTab('bg')"       aria-label="Background">
+    <span class="mob-tab-icon">🖼️</span>
+    <span class="mob-tab-label">Background</span>
+  </button>
+  <button class="mob-tab" data-tab="event"    onclick="switchTab('event')"    aria-label="Event">
+    <span class="mob-tab-icon">📋</span>
+    <span class="mob-tab-label">Event</span>
+  </button>
+  <button class="mob-tab" data-tab="typo"     onclick="switchTab('typo')"     aria-label="Typography">
+    <span class="mob-tab-icon">✏️</span>
+    <span class="mob-tab-label">Typography</span>
+  </button>
+  <button class="mob-tab" data-tab="staff"    onclick="switchTab('staff')"    aria-label="Staff">
+    <span class="mob-tab-icon">👥</span>
+    <span class="mob-tab-label">Staff</span>
+  </button>
+  <button class="mob-tab" data-tab="fields"   onclick="switchTab('fields')"   aria-label="Fields">
+    <span class="mob-tab-icon">📐</span>
+    <span class="mob-tab-label">Fields</span>
+  </button>
+  <button class="mob-tab" data-tab="generate" onclick="switchTab('generate')" aria-label="Generate">
+    <span class="mob-tab-icon">⬇️</span>
+    <span class="mob-tab-label">Generate</span>
+  </button>
+</nav>
+
 
 <script>
 // ─── STATE ───────────────────────────────────────────────────────────────────
@@ -1072,6 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDragDrop();
   autoLoadDefaultBackground();
   autoLoadNamelist();
+  if (window.innerWidth <= 768) switchTab('bg');
 });
 
 function autoLoadDefaultBackground() {
@@ -1174,6 +1374,35 @@ function toggleSection(id) {
   toggle.classList.toggle('open', open);
   toggle.textContent = open ? '▲' : '▼';
 }
+
+// ─── MOBILE TAB SWITCHING ────────────────────────────────────────────────────
+const _MOBILE_TABS = ['bg','event','typo','staff','fields','generate'];
+let _activeMobileTab = 'bg';
+
+function switchTab(id) {
+  _activeMobileTab = id;
+  document.querySelectorAll('.mob-tab').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.tab === id)
+  );
+  _MOBILE_TABS.forEach(sid => {
+    const body = document.getElementById('body-' + sid);
+    if (body) body.style.setProperty('display', 'none', 'important');
+  });
+  const active = document.getElementById('body-' + id);
+  if (active) active.style.setProperty('display', 'block', 'important');
+}
+
+const _mq = window.matchMedia('(max-width: 768px)');
+_mq.addEventListener('change', e => {
+  if (!e.matches) {
+    _MOBILE_TABS.forEach(sid => {
+      const body = document.getElementById('body-' + sid);
+      if (body) body.style.removeProperty('display');
+    });
+  } else {
+    switchTab(_activeMobileTab || 'bg');
+  }
+});
 
 // ─── BACKGROUND ──────────────────────────────────────────────────────────────
 function setBgName(text) {
