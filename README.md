@@ -6,10 +6,7 @@
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![No Backend](https://img.shields.io/badge/backend-none-brightgreen)
-
-# ToDo
-- generate as a single pdf
-- reload new background doesn't work on older browser
+![Mobile Ready](https://img.shields.io/badge/mobile-ready-blueviolet)
 
 ---
 
@@ -25,21 +22,22 @@ Everything lives in a single `index.html` file. Drop it on a web server alongsid
 
 ## Features
 
-- 🖼️ **Custom certificate background** — upload any JPG/PNG template, or use the auto-generated white + gold border fallback
+- 🖼️ **Custom certificate background** — upload any JPG/PNG template, or use the auto-generated white + gold border fallback; remove it at any time to revert to the fallback
 - 👥 **Bulk name list** — upload a `.txt`/`.csv` file or type names manually
 - 📊 **CSV multi-column import** — extra columns in a CSV automatically become custom certificate fields with their own positioning controls
-- ✏️ **Live preview** — see exactly how each certificate will look before generating
+- ✏️ **Live preview** — see exactly how each certificate will look before generating; unchecked names are excluded from preview navigation
 - ⚙️ **Field positioning** — adjust X-position, Y-position and font size for every field
 - 👁️ **Field visibility** — toggle individual fields on or off
 - 🎨 **Typography controls** — choose font family and text colour
 - 📅 **Smart date formatting** — automatically formats single and ranged dates
 - 🔢 **Auto-incrementing serial numbers** — with a customisable prefix
-- 📦 **ZIP export** — download all certificates in one ZIP file
+- 📦 **ZIP export** — download all certificates in one ZIP file, or combine them into a single multi-page PDF
 - 💾 **Backup & Restore Dataset** — save your entire setup (settings + background + name list + custom fields) as a ZIP and restore it later
 - 🔍 **Name list search** — live search with highlighted matches
 - 🔽 **Name list filter** — filter the checklist by All, Checked, or Unchecked names
 - 🚀 **Auto-loading** — automatically loads `default_background.jpg` and `namelist.txt` from the same folder on startup
 - 🎨 **Fallback background** — if no `default_background.jpg` is found, a clean white certificate with a gold border is generated automatically
+- 📲 **Mobile-optimised layout** — responsive 4-row interface on small screens: header, preview, section content, and tab bar
 
 ---
 
@@ -265,16 +263,23 @@ The **Live Preview** panel on the right shows a full A4 rendering of the certifi
 
 ### Step 9 — Generate Certificates
 
-At the bottom of the preview panel:
+At the bottom of the preview panel (or in the **Generate** tab on mobile):
 
-1. Check **Bundle as ZIP** to download all certificates in a single ZIP file (recommended for bulk generation). Uncheck to download individual PDFs one by one.
-2. Click **⬇ Generate Certificates**.
-3. A progress overlay will appear showing the current name being processed and overall progress.
-4. Once complete, the ZIP file (or individual PDFs) will be downloaded automatically.
+A confirmation popup will appear before generating, showing a summary of the event details, recipient count, and output format. Review and click **Proceed** to continue.
+
+**Download Certificates**
+1. Check **Bundle as ZIP** to package all PDFs into a single archive (recommended). Uncheck to download each PDF individually.
+2. Click **Download Certificates**.
+3. A progress overlay will show the current name being processed.
+4. Once complete, the ZIP or individual PDFs will be downloaded automatically.
+
+**Download as Single PDF**
+Click **Download as Single PDF** to combine all selected certificates into one multi-page PDF file.
 
 **Output file naming:**
 - Individual PDF: `EVENTNAME-STAFF_NAME.pdf`
 - ZIP archive: `EVENTNAME-YYYY-MM-DD.zip`
+- Single combined PDF: `EVENTNAME-YYYY-MM-DD.pdf`
 
 ---
 
@@ -284,7 +289,7 @@ WINNIE can save and restore your entire working setup — useful for recurring c
 
 ### Backup Dataset
 
-Click **⬇ Backup Dataset** in the top-right header. A ZIP file will be downloaded containing:
+Click **Backup Dataset** in the header (desktop) or in the **Generate** tab (mobile). A ZIP file will be downloaded containing:
 
 - `certforge-data.json` — all event details, typography, field positions (including X/Y and custom CSV fields), and the full staff list with per-person custom data
 - `background.jpg` / `background.png` — the certificate background image (if loaded)
@@ -293,7 +298,7 @@ The backup file is named: `EVENTNAME-backup-YYYY-MM-DD.zip`
 
 ### Restore Dataset
 
-Click **⬆ Restore Dataset** and select a previously saved backup ZIP. WINNIE will restore:
+Click **Restore Dataset** in the header (desktop) or in the **Generate** tab (mobile), then select a previously saved backup ZIP. WINNIE will restore:
 
 - All event fields and serial settings
 - Text colour and font family
@@ -303,6 +308,21 @@ Click **⬆ Restore Dataset** and select a previously saved backup ZIP. WINNIE w
 - The background image
 
 > ✅ Backup files are fully self-contained — share them with colleagues to replicate your exact setup.
+
+---
+
+## Mobile Layout
+
+On screens ≤768px wide, WINNIE switches to a mobile-optimised 4-row layout:
+
+| Row | Content |
+|---|---|
+| 1 | Header — logo, selection count, reset button |
+| 2 | Live preview (fixed, does not scroll) |
+| 3 | Active section content (scrollable) |
+| 4 | Section tab bar — Background, Event, Typography, Staff, Fields, Generate |
+
+The **Generate** tab on mobile contains the download buttons, Bundle as ZIP toggle, and Backup/Restore controls.
 
 ---
 
