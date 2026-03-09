@@ -1412,11 +1412,10 @@ function setBgName(text) {
 }
 
 function clearBackground() {
-  bgImage = null;
+  generateFallbackBackground();
   document.getElementById('bgFile').value = '';
-  setBgName('');
   updatePreview();
-  toast('Background removed', 'success');
+  toast('Background removed — fallback applied', 'success');
 }
 
 function loadBackground(event) {
