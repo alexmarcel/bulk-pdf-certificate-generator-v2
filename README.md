@@ -9,7 +9,7 @@
 
 # ToDo
 - generate as a single pdf
-- reload new background doesn't work
+- reload new background doesn't work on older browser
 
 ---
 
