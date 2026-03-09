@@ -840,7 +840,11 @@
           <div class="upload-text">Drop or click to upload certificate background</div>
           <div class="upload-hint">JPG, PNG — A4 ratio recommended (210×297mm)</div>
         </div>
-        <div id="bgName" class="upload-hint" style="margin-top:8px; text-align:center;"></div>
+        <div id="bgLoaded" style="display:none; margin-top:8px; padding:8px 12px; background:var(--surface2); border:1px solid rgba(200,169,110,0.35); border-radius:var(--radius); align-items:center; gap:8px;">
+          <span style="font-size:15px; flex-shrink:0">🖼️</span>
+          <span id="bgName" style="flex:1; font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace;"></span>
+          <button onclick="clearBackground()" title="Remove background and use fallback" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        </div>
       </div>
     </div>
 
@@ -1079,7 +1083,7 @@ function autoLoadDefaultBackground() {
     canvas.height = img.naturalHeight;
     canvas.getContext('2d').drawImage(img, 0, 0);
     bgImage = canvas.toDataURL('image/jpeg');
-    document.getElementById('bgName').textContent = '✓ default_background.jpg (auto-loaded)';
+    setBgName('default_background.jpg (auto-loaded)');
     updatePreview();
     toast('Default background auto-loaded', 'success');
   };
@@ -1141,7 +1145,7 @@ function generateFallbackBackground() {
   });
 
   bgImage = canvas.toDataURL('image/jpeg', 1.0);
-  document.getElementById('bgName').textContent = '✦ Default background (auto-generated)';
+  setBgName('Default background (auto-generated)');
 }
 
 function autoLoadNamelist() {
@@ -1154,6 +1158,7 @@ function autoLoadNamelist() {
       const clean = text.replace(/^\uFEFF/, ''); // strip BOM
       document.getElementById('staffTextarea').value = clean;
       applyStaffList();
+      showStaffFileLoaded('namelist.txt (auto-loaded)');
       toast('namelist.txt auto-loaded', 'success');
     })
     .catch(() => {
@@ -1171,13 +1176,27 @@ function toggleSection(id) {
 }
 
 // ─── BACKGROUND ──────────────────────────────────────────────────────────────
+function setBgName(text) {
+  const show = !!text;
+  document.getElementById('bgName').textContent = text;
+  document.getElementById('bgLoaded').style.display = show ? 'flex' : 'none';
+}
+
+function clearBackground() {
+  bgImage = null;
+  document.getElementById('bgFile').value = '';
+  setBgName('');
+  updatePreview();
+  toast('Background removed', 'success');
+}
+
 function loadBackground(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     bgImage = e.target.result;
-    document.getElementById('bgName').textContent = '✓ ' + file.name;
+    setBgName(file.name);
     updatePreview();
     toast('Background loaded: ' + file.name, 'success');
   };
@@ -1253,13 +1272,11 @@ function setManualInputDisabled(disabled) {
 }
 
 function showStaffFileLoaded(name) {
-  document.getElementById('staffUploadZone').style.display = 'none';
   document.getElementById('staffFileName').textContent = name;
   document.getElementById('staffFileLoaded').style.display = 'flex';
 }
 
 function hideStaffFileLoaded() {
-  document.getElementById('staffUploadZone').style.display = '';
   document.getElementById('staffFileLoaded').style.display = 'none';
 }
 
@@ -1890,7 +1907,7 @@ function setupDragDrop() {
       const reader = new FileReader();
       reader.onload = ev => {
         bgImage = ev.target.result;
-        document.getElementById('bgName').textContent = '✓ ' + f.name;
+        setBgName(f.name);
         updatePreview();
         toast('Background loaded: ' + f.name, 'success');
       };
@@ -1908,7 +1925,7 @@ function resetAll() {
   staffCustomData = {};
   previewPersonIndex = 0;
   FIELDS = BASE_FIELDS.map(f => ({ ...f }));
-  document.getElementById('bgName').textContent = '';
+  setBgName('');
   document.getElementById('bgFile').value = '';
   document.getElementById('staffTextarea').value = '';
   document.getElementById('staffFile').value = '';
@@ -2082,7 +2099,7 @@ async function restoreSet(event) {
 
     // --- Load background image ---
     bgImage = null;
-    document.getElementById('bgName').textContent = '';
+    setBgName('');
     const bgPng = zip.file('background.png');
     const bgJpg = zip.file('background.jpg') || zip.file('background.jpeg');
     const bgFile = bgPng || bgJpg;
@@ -2091,7 +2108,7 @@ async function restoreSet(event) {
       const mime  = bgPng ? 'image/png' : 'image/jpeg';
       bgImage     = `data:${mime};base64,${b64}`;
       const fname = bgPng ? 'background.png' : 'background.jpg';
-      document.getElementById('bgName').textContent = '✓ ' + fname + ' (restored)';
+      setBgName(fname + ' (restored)');
     }
 
     updatePreview();
