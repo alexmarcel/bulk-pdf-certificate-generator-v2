@@ -1963,7 +1963,7 @@ function confirmProceed() {
   else generateAll();
 }
 
-// ─── PDF GENERATION ───────────────────────────────────────────────────────────
+// ─── PDF GENERATIOn ───────────────────────────────────────────────────────────
 async function generateAll() {
   const selected = staffNames.filter((_, i) => staffSelected[i]);
   if (!selected.length) { toast('No staff selected!', 'error'); return; }
