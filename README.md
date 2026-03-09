@@ -7,6 +7,10 @@
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![No Backend](https://img.shields.io/badge/backend-none-brightgreen)
 
+# ToDo
+- generate as a single pdf
+- reload new background doesn't work
+
 ---
 
 ## What is WINNIE?
