@@ -3,7 +3,6 @@
 
 > A single-file, no-install web application for generating bulk PDF certificates — built for nursing and healthcare training institutions.
 
-![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![No Backend](https://img.shields.io/badge/backend-none-brightgreen)
 ![Mobile Ready](https://img.shields.io/badge/mobile-ready-blueviolet)
@@ -370,12 +369,6 @@ No npm. No build step. No backend. Everything loads from CDN.
 ## Browser Support
 
 Chrome and Edge are recommended. Firefox and Safari are supported. A modern browser with ES6+ and Canvas API support is required.
-
----
-
-## License
-
-Apache 2.0 — see [LICENSE](LICENSE) for details.
 
 ---
 
