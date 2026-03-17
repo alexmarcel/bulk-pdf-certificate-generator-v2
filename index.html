@@ -7,6 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.10/dist/floating-ui.dom.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/focus-trap@7.6.0/dist/focus-trap.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -336,7 +339,8 @@
     width: 100%;
   }
 
-  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
+  .upload-icon svg { width: 28px; height: 28px; stroke: currentColor; }
   .upload-text { font-size: 12px; color: var(--text-muted); }
   .upload-hint { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
 
@@ -614,6 +618,31 @@
     justify-content: flex-end;
   }
 
+  /* FLOATING TOOLTIP */
+  .winnie-tooltip {
+    background: var(--surface3);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 260px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    z-index: 9999;
+    pointer-events: none;
+    white-space: normal;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .winnie-tooltip-arrow {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    transform: rotate(45deg);
+  }
+
   /* TOAST */
   .toast-container {
     position: fixed;
@@ -749,7 +778,8 @@
     color: var(--text-dim);
   }
 
-  .no-preview-icon { font-size: 48px; opacity: 0.4; }
+  .no-preview-icon { font-size: 48px; opacity: 0.4; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
+  .no-preview-icon svg { width: 48px; height: 48px; stroke: currentColor; }
   .no-preview-text { font-size: 14px; }
 
   /* BADGE */
@@ -869,10 +899,11 @@
       border-right: none;
       border-top: 1px solid var(--border);
       background: var(--surface);
-      margin-bottom: 100px;
     }
 
     .section-header { display: none; }
+
+    .section { border-bottom: none; }
 
     .section-body {
       display: none !important;
@@ -913,10 +944,12 @@
     .mob-tab.active { color: var(--accent); }
     .mob-tab[data-tab="generate"].active { color: var(--success); }
 
-    .mob-tab-icon { font-size: 18px; line-height: 1; }
+    .mob-tab-icon { display:flex; align-items:center; justify-content:center; line-height: 1; }
+    .mob-tab-icon svg { width: 20px; height: 20px; stroke: currentColor; }
 
     .mob-tab-label {
-      font-size: 9px;
+      font-size: 6px;
+      padding-top: 4px;
       font-weight: 600;
       letter-spacing: 0.5px;
       text-transform: uppercase;
@@ -976,28 +1009,28 @@
 
     <!-- SECTION: Background -->
     <div class="section">
-      <div class="section-header" onclick="toggleSection('bg')">
+      <div class="section-header" onclick="toggleSection('bg')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection('bg')}" aria-expanded="true" aria-controls="body-bg" id="header-bg">
         <span class="section-label"><span class="dot"></span> Background</span>
         <span class="section-toggle open" id="toggle-bg">▲</span>
       </div>
       <div class="section-body open" id="body-bg">
         <div class="upload-zone" id="bgDropZone">
           <input type="file" id="bgFile" accept="image/*" onchange="loadBackground(event)">
-          <div class="upload-icon">🖼️</div>
+          <div class="upload-icon"><i data-lucide="image"></i></div>
           <div class="upload-text">Drop or click to upload certificate background</div>
           <div class="upload-hint">JPG, PNG — A4 ratio recommended (210×297mm)</div>
         </div>
         <div id="bgLoaded" style="display:none; margin-top:8px; padding:8px 12px; background:var(--surface2); border:1px solid rgba(200,169,110,0.35); border-radius:var(--radius); align-items:center; gap:8px;">
-          <span style="font-size:15px; flex-shrink:0">🖼️</span>
+          <span style="flex-shrink:0;display:flex;align-items:center;color:var(--accent)"><i data-lucide="image" style="width:15px;height:15px"></i></span>
           <span id="bgName" style="flex:1; font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace;"></span>
-          <button onclick="clearBackground()" title="Remove background and use fallback" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+          <button onclick="clearBackground()" title="Remove background and use fallback" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s; display:flex; align-items:center;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'"><i data-lucide="x" style="width:14px;height:14px"></i></button>
         </div>
       </div>
     </div>
 
     <!-- SECTION: Event Details -->
     <div class="section">
-      <div class="section-header" onclick="toggleSection('event')">
+      <div class="section-header" onclick="toggleSection('event')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection('event')}" aria-expanded="true" aria-controls="body-event" id="header-event">
         <span class="section-label"><span class="dot"></span> Event Details</span>
         <span class="section-toggle open" id="toggle-event">▲</span>
       </div>
@@ -1039,7 +1072,7 @@
 
     <!-- SECTION: Typography-->
     <div class="section">
-      <div class="section-header" onclick="toggleSection('typo')">
+      <div class="section-header" onclick="toggleSection('typo')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection('typo')}" aria-expanded="true" aria-controls="body-typo" id="header-typo">
         <span class="section-label"><span class="dot"></span> Typography</span>
         <span class="section-toggle" id="toggle-typo">▲</span>
       </div>
@@ -1064,26 +1097,26 @@
 
     <!-- SECTION: Staff List -->
     <div class="section">
-      <div class="section-header" onclick="toggleSection('staff')">
+      <div class="section-header" onclick="toggleSection('staff')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection('staff')}" aria-expanded="true" aria-controls="body-staff" id="header-staff">
         <span class="section-label"><span class="dot"></span> Staff List</span>
         <span class="section-toggle open" id="toggle-staff">▲</span>
       </div>
       <div class="section-body open" id="body-staff">
         <div class="upload-zone" id="staffUploadZone" style="margin-bottom:12px">
           <input type="file" id="staffFile" accept=".txt,.csv" onchange="loadStaffFile(event)">
-          <div class="upload-icon">📋</div>
+          <div class="upload-icon"><i data-lucide="file-text"></i></div>
           <div class="upload-text">Upload .txt or .csv file</div>
           <div class="upload-hint">CSV with headers: first column = Name, extra columns become certificate fields</div>
         </div>
         <div id="staffFileLoaded" style="display:none; margin-bottom:12px; padding:10px 12px; background:var(--surface2); border:1px solid rgba(200,169,110,0.35); border-radius:var(--radius); align-items:center; gap:8px;">
-          <span style="font-size:15px; flex-shrink:0">📋</span>
+          <span style="flex-shrink:0;display:flex;align-items:center;color:var(--accent)"><i data-lucide="file-text" style="width:15px;height:15px"></i></span>
           <span id="staffFileName" style="flex:1; font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace;"></span>
-          <button onclick="clearStaffFile()" title="Remove file" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+          <button onclick="clearStaffFile()" title="Remove file" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s; display:flex; align-items:center;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'"><i data-lucide="x" style="width:14px;height:14px"></i></button>
         </div>
         <div id="manualInputGroup">
           <div class="field-row">
             <label>Or type names manually (one per line)</label>
-            <textarea id="staffTextarea" placeholder="JOHN DOE&#10;JANE SMITH&#10;AHMAD BIN ALI"></textarea>
+            <textarea id="staffTextarea" placeholder="JOHN DOE&#10;JANE SMITH&#10;AHMAD BIN ALI" oninput="_debouncedApply()"></textarea>
           </div>
           <button id="applyListBtn" class="btn btn-ghost btn-sm" style="width:100%; margin-bottom:10px" onclick="applyStaffList()">Apply List</button>
         </div>
@@ -1116,7 +1149,7 @@
 
     <!-- SECTION: Field Positions -->
     <div class="section">
-      <div class="section-header" onclick="toggleSection('fields')">
+      <div class="section-header" onclick="toggleSection('fields')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSection('fields')}" aria-expanded="true" aria-controls="body-fields" id="header-fields">
         <span class="section-label"><span class="dot"></span> Field Positions</span>
         <span class="section-toggle open" id="toggle-fields">▲</span>
       </div>
@@ -1134,10 +1167,10 @@
           <input type="checkbox" id="zipAllMobile" checked onchange="document.getElementById('zipAll').checked=this.checked;">
           Bundle as ZIP
         </label>
-        <button class="btn btn-success btn-lg" style="width:100%;margin-bottom:10px;" onclick="confirmGenerate('multi')" title="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
+        <button class="btn btn-success btn-lg" style="width:100%;margin-bottom:10px;" onclick="confirmGenerate('multi')" data-tooltip="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
           Download Certificates
         </button>
-        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:20px;" onclick="confirmGenerate('single')" title="Combine all selected certificates into one multi-page PDF file and download it.">
+        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:20px;" onclick="confirmGenerate('single')" data-tooltip="Combine all selected certificates into one multi-page PDF file and download it.">
           Download as Single PDF
         </button>
         <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;flex-direction:column;gap:10px;">
@@ -1157,14 +1190,14 @@
     <div class="preview-header">
       <span class="preview-label">Live Preview</span>
       <div class="preview-nav">
-        <button class="btn btn-ghost btn-sm" onclick="prevPerson()">◀</button>
+        <button class="btn btn-ghost btn-sm" onclick="prevPerson()"><i data-lucide="chevron-left"></i></button>
         <span id="previewPersonLabel">—</span>
-        <button class="btn btn-ghost btn-sm" onclick="nextPerson()">▶</button>
+        <button class="btn btn-ghost btn-sm" onclick="nextPerson()"><i data-lucide="chevron-right"></i></button>
       </div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <div class="no-preview">
-        <div class="no-preview-icon">🏅</div>
+        <div class="no-preview-icon"><i data-lucide="award"></i></div>
         <div class="no-preview-text">Configure fields to see a live preview</div>
       </div>
     </div>
@@ -1175,11 +1208,11 @@
         <input type="checkbox" id="zipAll" checked onchange="const m=document.getElementById('zipAllMobile');if(m)m.checked=this.checked;">
         Bundle as ZIP
       </label>
-      <button class="btn btn-success btn-lg" onclick="confirmGenerate('multi')" title="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
+      <button class="btn btn-success btn-lg" onclick="confirmGenerate('multi')" data-tooltip="Download each certificate as a separate PDF. If 'Bundle as ZIP' is checked, all files will be packaged into a single ZIP archive.">
         Download Certificates
       </button>
       <div style="width:1px;background:#444;align-self:stretch;margin:0 4px"></div>
-      <button class="btn btn-primary btn-lg" onclick="confirmGenerate('single')" title="Combine all selected certificates into one multi-page PDF file and download it.">
+      <button class="btn btn-primary btn-lg" onclick="confirmGenerate('single')" data-tooltip="Combine all selected certificates into one multi-page PDF file and download it.">
         Download as Single PDF
       </button>
     </div>
@@ -1187,19 +1220,20 @@
 </div>
 
 <!-- PROGRESS OVERLAY -->
-<div class="progress-overlay" id="progressOverlay">
+<div class="progress-overlay" id="progressOverlay" role="dialog" aria-modal="true" aria-labelledby="progressTitle" aria-live="polite">
   <div class="progress-card">
-    <div class="progress-title">Generating…</div>
+    <div class="progress-title" id="progressTitle">Generating…</div>
     <div class="progress-sub" id="progressSub">Preparing certificates</div>
-    <div class="progress-bar-wrap">
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="progressStats">
       <div class="progress-bar-fill" id="progressFill"></div>
     </div>
     <div class="progress-stats" id="progressStats">0 / 0</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:16px;width:100%;color:var(--danger);border-color:var(--danger);" onclick="_generationAborted=true;this.disabled=true;this.textContent='Cancelling…'" id="progressCancelBtn">Cancel</button>
   </div>
 </div>
 
 <!-- CONFIRM MODAL -->
-<div class="confirm-overlay" id="confirmOverlay">
+<div class="confirm-overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="confirm-card">
     <div class="confirm-title" id="confirmTitle">Generate Certificates</div>
     <div class="confirm-info" id="confirmInfo"></div>
@@ -1214,29 +1248,29 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- MOBILE TAB BAR -->
-<nav id="mobileTabBar" aria-label="Sections">
-  <button class="mob-tab active" data-tab="bg"       onclick="switchTab('bg')"       aria-label="Background">
-    <span class="mob-tab-icon">🖼️</span>
+<nav id="mobileTabBar" aria-label="Sections" role="tablist">
+  <button class="mob-tab active" data-tab="bg"       onclick="switchTab('bg')"       role="tab" aria-selected="true"  aria-controls="body-bg"       aria-label="Background">
+    <span class="mob-tab-icon"><i data-lucide="image"></i></span>
     <span class="mob-tab-label">Background</span>
   </button>
-  <button class="mob-tab" data-tab="event"    onclick="switchTab('event')"    aria-label="Event">
-    <span class="mob-tab-icon">📋</span>
+  <button class="mob-tab" data-tab="event"    onclick="switchTab('event')"    role="tab" aria-selected="false" aria-controls="body-event"    aria-label="Event">
+    <span class="mob-tab-icon"><i data-lucide="calendar"></i></span>
     <span class="mob-tab-label">Event</span>
   </button>
-  <button class="mob-tab" data-tab="typo"     onclick="switchTab('typo')"     aria-label="Typography">
-    <span class="mob-tab-icon">✏️</span>
+  <button class="mob-tab" data-tab="typo"     onclick="switchTab('typo')"     role="tab" aria-selected="false" aria-controls="body-typo"     aria-label="Typography">
+    <span class="mob-tab-icon"><i data-lucide="type"></i></span>
     <span class="mob-tab-label">Typography</span>
   </button>
-  <button class="mob-tab" data-tab="staff"    onclick="switchTab('staff')"    aria-label="Staff">
-    <span class="mob-tab-icon">👥</span>
+  <button class="mob-tab" data-tab="staff"    onclick="switchTab('staff')"    role="tab" aria-selected="false" aria-controls="body-staff"    aria-label="Staff">
+    <span class="mob-tab-icon"><i data-lucide="users"></i></span>
     <span class="mob-tab-label">Staff</span>
   </button>
-  <button class="mob-tab" data-tab="fields"   onclick="switchTab('fields')"   aria-label="Fields">
-    <span class="mob-tab-icon">📐</span>
+  <button class="mob-tab" data-tab="fields"   onclick="switchTab('fields')"   role="tab" aria-selected="false" aria-controls="body-fields"   aria-label="Fields">
+    <span class="mob-tab-icon"><i data-lucide="sliders-horizontal"></i></span>
     <span class="mob-tab-label">Fields</span>
   </button>
-  <button class="mob-tab" data-tab="generate" onclick="switchTab('generate')" aria-label="Generate">
-    <span class="mob-tab-icon">⬇️</span>
+  <button class="mob-tab" data-tab="generate" onclick="switchTab('generate')" role="tab" aria-selected="false" aria-controls="body-generate" aria-label="Generate">
+    <span class="mob-tab-icon"><i data-lucide="download"></i></span>
     <span class="mob-tab-label">Generate</span>
   </button>
 </nav>
@@ -1271,6 +1305,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDragDrop();
   autoLoadDefaultBackground();
   autoLoadNamelist();
+  restoreSectionStates();
+  if (window.lucide) lucide.createIcons();
+  setupTooltips();
   if (window.innerWidth <= 768) switchTab('bg');
 });
 
@@ -1370,9 +1407,28 @@ function autoLoadNamelist() {
 function toggleSection(id) {
   const body = document.getElementById('body-' + id);
   const toggle = document.getElementById('toggle-' + id);
+  const header = document.getElementById('header-' + id);
   const open = body.classList.toggle('open');
   toggle.classList.toggle('open', open);
   toggle.textContent = open ? '▲' : '▼';
+  if (header) header.setAttribute('aria-expanded', open ? 'true' : 'false');
+  try { localStorage.setItem('winnie_section_' + id, open ? '1' : '0'); } catch(e) {}
+}
+
+function restoreSectionStates() {
+  ['bg','event','typo','staff','fields'].forEach(id => {
+    const saved = localStorage.getItem('winnie_section_' + id);
+    if (saved === null) return; // no saved state — leave default
+    const body   = document.getElementById('body-' + id);
+    const toggle = document.getElementById('toggle-' + id);
+    const header = document.getElementById('header-' + id);
+    if (!body || !toggle) return;
+    const open = saved === '1';
+    body.classList.toggle('open', open);
+    toggle.classList.toggle('open', open);
+    toggle.textContent = open ? '▲' : '▼';
+    if (header) header.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
 }
 
 // ─── MOBILE TAB SWITCHING ────────────────────────────────────────────────────
@@ -1381,9 +1437,11 @@ let _activeMobileTab = 'bg';
 
 function switchTab(id) {
   _activeMobileTab = id;
-  document.querySelectorAll('.mob-tab').forEach(btn =>
-    btn.classList.toggle('active', btn.dataset.tab === id)
-  );
+  document.querySelectorAll('.mob-tab').forEach(btn => {
+    const isActive = btn.dataset.tab === id;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
   _MOBILE_TABS.forEach(sid => {
     const body = document.getElementById('body-' + sid);
     if (body) body.style.setProperty('display', 'none', 'important');
@@ -1892,6 +1950,16 @@ function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
   });
 }
 
+// ─── DEBOUNCED TEXTAREA ───────────────────────────────────────────────────────
+let _applyTimer = null;
+function _debouncedApply() {
+  clearTimeout(_applyTimer);
+  _applyTimer = setTimeout(applyStaffList, 300);
+}
+
+// ─── GENERATION ABORT ────────────────────────────────────────────────────────
+let _generationAborted = false;
+
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function escapeHtml(str) {
   return String(str)
@@ -1911,6 +1979,7 @@ function getSerial(i) {
 
 // ─── GENERATE CONFIRM ────────────────────────────────────────────────────────
 let _pendingGenerateMode = null;
+let _confirmTrap = null;
 
 function confirmGenerate(mode) {
   const selected = staffNames.filter((_, i) => staffSelected[i]);
@@ -1959,11 +2028,20 @@ function confirmGenerate(mode) {
   btn.className = isSingle ? 'btn btn-primary' : 'btn btn-success';
 
   document.getElementById('confirmOverlay').classList.add('show');
+  if (window.focusTrap) {
+    if (_confirmTrap) { try { _confirmTrap.deactivate(); } catch(e) {} }
+    _confirmTrap = window.focusTrap.createFocusTrap(document.querySelector('.confirm-card'), {
+      escapeDeactivates: false,
+      allowOutsideClick: true,
+    });
+    try { _confirmTrap.activate(); } catch(e) {}
+  }
 }
 
 function closeConfirm() {
   document.getElementById('confirmOverlay').classList.remove('show');
   _pendingGenerateMode = null;
+  if (_confirmTrap) { try { _confirmTrap.deactivate(); } catch(e) {} _confirmTrap = null; }
 }
 
 function confirmProceed() {
@@ -1984,11 +2062,15 @@ async function generateAll() {
   const sub     = document.getElementById('progressSub');
   const stats   = document.getElementById('progressStats');
 
+  _generationAborted = false;
+  const cancelBtn = document.getElementById('progressCancelBtn');
+  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel'; }
   overlay.classList.add('show');
   const zip = doZip ? new JSZip() : null;
   const { jsPDF } = window.jspdf;
 
   for (let idx = 0; idx < selected.length; idx++) {
+    if (_generationAborted) break;
     const name = selected[idx];
     const globalIdx = staffNames.indexOf(name);
     const pct = ((idx + 1) / selected.length) * 100;
@@ -2052,7 +2134,7 @@ async function generateAll() {
     }
   }
 
-  if (doZip) {
+  if (!_generationAborted && doZip) {
     const blob = await zip.generateAsync({ type: 'blob' });
     const zipName = (document.getElementById('eventTitle').value || 'CERTS').replace(/\s+/g,'_')
       + '-' + (document.getElementById('dateFrom').value || 'batch') + '.zip';
@@ -2060,7 +2142,11 @@ async function generateAll() {
   }
 
   overlay.classList.remove('show');
-  toast(`✓ ${selected.length} certificate${selected.length > 1 ? 's' : ''} generated!`, 'success');
+  if (_generationAborted) {
+    toast('Generation cancelled.', 'error');
+  } else {
+    toast(`✓ ${selected.length} certificate${selected.length > 1 ? 's' : ''} generated!`, 'success');
+  }
 }
 
 async function generateSinglePDF() {
@@ -2072,6 +2158,9 @@ async function generateSinglePDF() {
   const sub     = document.getElementById('progressSub');
   const stats   = document.getElementById('progressStats');
 
+  _generationAborted = false;
+  const cancelBtn = document.getElementById('progressCancelBtn');
+  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel'; }
   overlay.classList.add('show');
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -2083,6 +2172,7 @@ async function generateSinglePDF() {
   const dateStr = formatDateRange();
 
   for (let idx = 0; idx < selected.length; idx++) {
+    if (_generationAborted) break;
     const name = selected[idx];
     const globalIdx = staffNames.indexOf(name);
     const pct = ((idx + 1) / selected.length) * 100;
@@ -2125,11 +2215,14 @@ async function generateSinglePDF() {
     });
   }
 
+  overlay.classList.remove('show');
+  if (_generationAborted) {
+    toast('Generation cancelled.', 'error');
+    return;
+  }
   const title = (document.getElementById('eventTitle').value || 'CERTS').replace(/\s+/g,'_');
   const date  = document.getElementById('dateFrom').value || 'batch';
   pdf.save(`${title}-${date}.pdf`);
-
-  overlay.classList.remove('show');
   toast(`${selected.length} certificate${selected.length > 1 ? 's' : ''} combined into one PDF!`, 'success');
 }
 
@@ -2358,13 +2451,54 @@ async function restoreSet(event) {
   }
 }
 
+// ─── FLOATING UI TOOLTIPS ─────────────────────────────────────────────────────
+function setupTooltips() {
+  if (!window.FloatingUIDOM) return;
+  const { computePosition, autoPlacement, offset, arrow } = window.FloatingUIDOM;
+
+  document.querySelectorAll('[data-tooltip]').forEach(ref => {
+    const tip = document.createElement('div');
+    tip.className = 'winnie-tooltip';
+    tip.textContent = ref.dataset.tooltip;
+    tip.style.display = 'none';
+    tip.style.position = 'absolute';
+    tip.style.top = '0';
+    tip.style.left = '0';
+    document.body.appendChild(tip);
+
+    const update = () => {
+      computePosition(ref, tip, {
+        placement: 'top',
+        middleware: [offset(8), autoPlacement({ allowedPlacements: ['top','bottom'] })],
+      }).then(({ x, y }) => {
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
+      });
+    };
+
+    ref.addEventListener('mouseenter', () => { tip.style.display = 'block'; update(); });
+    ref.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    ref.addEventListener('focus',      () => { tip.style.display = 'block'; update(); });
+    ref.addEventListener('blur',       () => { tip.style.display = 'none'; });
+  });
+}
+
+// ─── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('confirmOverlay');
+    if (overlay && overlay.classList.contains('show')) closeConfirm();
+  }
+});
+
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
-  el.innerHTML = `<span>${icon}</span><span>${escapeHtml(msg)}</span>`;
+  const iconName = type === 'success' ? 'check' : type === 'error' ? 'x' : 'info';
+  el.innerHTML = `<span style="display:flex;align-items:center;flex-shrink:0"><i data-lucide="${iconName}" style="width:14px;height:14px"></i></span><span style="flex:1">${escapeHtml(msg)}</span><button onclick="this.closest('.toast').remove()" style="background:none;border:none;color:inherit;opacity:0.5;cursor:pointer;padding:0 0 0 8px;line-height:1;flex-shrink:0;display:flex;align-items:center" aria-label="Dismiss"><i data-lucide="x" style="width:13px;height:13px"></i></button>`;
   document.getElementById('toastContainer').appendChild(el);
+  if (window.lucide) lucide.createIcons({ nodes: [el] });
   setTimeout(() => el.remove(), 3500);
 }
 </script>
