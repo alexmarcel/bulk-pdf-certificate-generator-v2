@@ -899,6 +899,7 @@
       border-right: none;
       border-top: 1px solid var(--border);
       background: var(--surface);
+      padding-bottom: calc(74px + env(safe-area-inset-bottom));
     }
 
     .section-header { display: none; }
@@ -907,8 +908,9 @@
 
     .section-body {
       display: none !important;
-      padding: 14px 16px 20px;
+      padding: 14px 16px 32px;
     }
+
 
     #section-generate { display: block; }
 
@@ -986,7 +988,7 @@
     <span class="logo-sub">Web-based Institutional Nursing Name-list Issuance of E-Certificates</span>
   </div>
   <div class="header-actions">
-    <span id="headerCount" class="badge" style="margin:2px 0 0 0">0 selected</span>
+    <span id="headerCount" class="badge" style="background-color: #0e0e10; padding: 10px; margin:2px 0 0 0">0 selected</span>
     <span id="headerBackupRestore" style="display:contents">
       <div class="btn-divider"></div>
       <span style="padding:3px 0 0 0"><button class="btn btn-backup btn-sm" onclick="backupSet()" title="Save all settings + background + staff list as a ZIP">
