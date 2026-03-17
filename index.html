@@ -2453,35 +2453,31 @@ async function restoreSet(event) {
   }
 }
 
-// ─── FLOATING UI TOOLTIPS ─────────────────────────────────────────────────────
+// ─── TOOLTIPS ─────────────────────────────────────────────────────────────────
 function setupTooltips() {
-  if (!window.FloatingUIDOM) return;
-  const { computePosition, autoPlacement, offset, arrow } = window.FloatingUIDOM;
+  const tip = document.createElement('div');
+  tip.className = 'winnie-tooltip';
+  tip.style.position = 'fixed';
+  tip.style.display = 'none';
+  tip.style.zIndex = '9999';
+  document.body.appendChild(tip);
 
   document.querySelectorAll('[data-tooltip]').forEach(ref => {
-    const tip = document.createElement('div');
-    tip.className = 'winnie-tooltip';
-    tip.textContent = ref.dataset.tooltip;
-    tip.style.display = 'none';
-    tip.style.position = 'absolute';
-    tip.style.top = '0';
-    tip.style.left = '0';
-    document.body.appendChild(tip);
-
-    const update = () => {
-      computePosition(ref, tip, {
-        placement: 'top',
-        middleware: [offset(8), autoPlacement({ allowedPlacements: ['top','bottom'] })],
-      }).then(({ x, y }) => {
-        tip.style.left = x + 'px';
-        tip.style.top  = y + 'px';
-      });
-    };
-
-    ref.addEventListener('mouseenter', () => { tip.style.display = 'block'; update(); });
+    ref.addEventListener('mouseenter', () => {
+      tip.textContent = ref.dataset.tooltip;
+      tip.style.display = 'block';
+      const r = ref.getBoundingClientRect();
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+      let x = r.left + r.width / 2 - tw / 2;
+      let y = r.top - th - 8;
+      if (y < 8) y = r.bottom + 8;
+      if (x < 8) x = 8;
+      if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+      tip.style.left = x + 'px';
+      tip.style.top  = y + 'px';
+    });
     ref.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
-    ref.addEventListener('focus',      () => { tip.style.display = 'block'; update(); });
-    ref.addEventListener('blur',       () => { tip.style.display = 'none'; });
   });
 }
 
