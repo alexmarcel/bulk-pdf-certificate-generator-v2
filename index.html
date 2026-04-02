@@ -617,6 +617,66 @@
     gap: 10px;
     justify-content: flex-end;
   }
+  .confirm-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface2);
+  }
+  .confirm-setting-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .confirm-setting-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .confirm-setting-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .confirm-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .confirm-toggle input[type="checkbox"] { accent-color: var(--accent); }
+  .confirm-slider-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .confirm-slider-wrap.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .confirm-slider {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .confirm-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
 
   /* FLOATING TOOLTIP */
   .winnie-tooltip {
@@ -1239,6 +1299,24 @@
   <div class="confirm-card">
     <div class="confirm-title" id="confirmTitle">Generate Certificates</div>
     <div class="confirm-info" id="confirmInfo"></div>
+    <div class="confirm-settings">
+      <div class="confirm-setting-head">
+        <span class="confirm-setting-title">Background Compression</span>
+        <span class="confirm-setting-value" id="compressionLevelLabel">Medium</span>
+      </div>
+      <label class="confirm-toggle">
+        <input type="checkbox" id="compressionEnabled" checked>
+        <span>Compress background image for export</span>
+      </label>
+      <div class="confirm-slider-wrap" id="compressionSliderWrap">
+        <input type="range" id="compressionLevel" class="confirm-slider" min="1" max="3" step="1" value="2" aria-label="Compression level">
+        <div class="confirm-slider-labels">
+          <span>Low</span>
+          <span>Medium</span>
+          <span>High</span>
+        </div>
+      </div>
+    </div>
     <div class="confirm-actions">
       <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
       <button class="btn btn-success" id="confirmProceedBtn" onclick="confirmProceed()">Proceed</button>
@@ -1286,6 +1364,11 @@ let staffSelected = [];
 let staffCustomData = {}; // { "PERSON NAME": { "col_header": "value", ... } }
 let previewPersonIndex = 0;
 let previewCanvas = null;
+const EXPORT_SETTINGS_KEY = 'winnie_export_settings_v1';
+const DEFAULT_EXPORT_SETTINGS = {
+  compressionEnabled: true,
+  compressionLevel: 2,
+};
 
 const BASE_FIELDS = [
   { id: 'name',       label: 'Staff Name',    xMm: 105, yMm: 123, fontSize: 20, visible: true,  bold: true,  isCustom: false },
@@ -1308,6 +1391,7 @@ document.addEventListener('DOMContentLoaded', () => {
   autoLoadDefaultBackground();
   autoLoadNamelist();
   restoreSectionStates();
+  initExportSettings();
   if (window.lucide) lucide.createIcons();
   setupTooltips();
   if (window.innerWidth <= 768) switchTab('bg');
@@ -1979,6 +2063,128 @@ function getSerial(i) {
   return prefix + String(start + i).padStart(3, '0');
 }
 
+function sanitizeExportSettings(raw) {
+  const enabled = typeof raw?.compressionEnabled === 'boolean'
+    ? raw.compressionEnabled
+    : DEFAULT_EXPORT_SETTINGS.compressionEnabled;
+  let level = parseInt(raw?.compressionLevel, 10);
+  if (!Number.isFinite(level)) level = DEFAULT_EXPORT_SETTINGS.compressionLevel;
+  level = Math.min(3, Math.max(1, level));
+  return { compressionEnabled: enabled, compressionLevel: level };
+}
+
+function loadExportSettings() {
+  try {
+    const saved = localStorage.getItem(EXPORT_SETTINGS_KEY);
+    if (!saved) return { ...DEFAULT_EXPORT_SETTINGS };
+    return sanitizeExportSettings(JSON.parse(saved));
+  } catch (e) {
+    return { ...DEFAULT_EXPORT_SETTINGS };
+  }
+}
+
+function saveExportSettings(settings) {
+  const clean = sanitizeExportSettings(settings);
+  try {
+    localStorage.setItem(EXPORT_SETTINGS_KEY, JSON.stringify(clean));
+  } catch (e) {}
+  return clean;
+}
+
+function getCompressionLevelMeta(level) {
+  const map = {
+    1: { label: 'Low', quality: 0.82, maxWidth: 1600 },
+    2: { label: 'Medium', quality: 0.6, maxWidth: 1280 },
+    3: { label: 'High', quality: 0.42, maxWidth: 1050 },
+  };
+  return map[level] || map[DEFAULT_EXPORT_SETTINGS.compressionLevel];
+}
+
+function describeCompression(settings) {
+  if (!settings.compressionEnabled) return 'Off';
+  return getCompressionLevelMeta(settings.compressionLevel).label;
+}
+
+function getExportSettingsFromUI() {
+  return sanitizeExportSettings({
+    compressionEnabled: document.getElementById('compressionEnabled')?.checked,
+    compressionLevel: document.getElementById('compressionLevel')?.value,
+  });
+}
+
+function updateCompressionControls() {
+  const enabledEl = document.getElementById('compressionEnabled');
+  const levelEl = document.getElementById('compressionLevel');
+  const labelEl = document.getElementById('compressionLevelLabel');
+  const wrapEl = document.getElementById('compressionSliderWrap');
+  if (!enabledEl || !levelEl || !labelEl || !wrapEl) return;
+
+  const settings = sanitizeExportSettings({
+    compressionEnabled: enabledEl.checked,
+    compressionLevel: levelEl.value,
+  });
+
+  labelEl.textContent = describeCompression(settings);
+  wrapEl.classList.toggle('disabled', !settings.compressionEnabled);
+  levelEl.disabled = !settings.compressionEnabled;
+}
+
+function initExportSettings() {
+  const enabledEl = document.getElementById('compressionEnabled');
+  const levelEl = document.getElementById('compressionLevel');
+  if (!enabledEl || !levelEl) return;
+
+  const settings = loadExportSettings();
+  enabledEl.checked = settings.compressionEnabled;
+  levelEl.value = String(settings.compressionLevel);
+  updateCompressionControls();
+
+  enabledEl.addEventListener('change', () => {
+    const current = getExportSettingsFromUI();
+    saveExportSettings(current);
+    updateCompressionControls();
+  });
+  levelEl.addEventListener('input', updateCompressionControls);
+  levelEl.addEventListener('change', () => saveExportSettings(getExportSettingsFromUI()));
+}
+
+function loadImageElement(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load export background'));
+    img.src = src;
+  });
+}
+
+async function prepareExportBackground() {
+  if (!bgImage) return null;
+
+  const settings = saveExportSettings(getExportSettingsFromUI());
+  if (!settings.compressionEnabled) {
+    return {
+      dataUrl: bgImage,
+      format: bgImage.includes('image/png') ? 'PNG' : 'JPEG',
+    };
+  }
+
+  const meta = getCompressionLevelMeta(settings.compressionLevel);
+  const img = await loadImageElement(bgImage);
+  const scale = Math.min(1, meta.maxWidth / img.naturalWidth);
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+
+  return {
+    dataUrl: canvas.toDataURL('image/jpeg', meta.quality),
+    format: 'JPEG',
+  };
+}
+
 // ─── GENERATE CONFIRM ────────────────────────────────────────────────────────
 let _pendingGenerateMode = null;
 let _confirmTrap = null;
@@ -2010,6 +2216,7 @@ function confirmGenerate(mode) {
     ['Location',     loc],
     ['Recipients',   `${selected.length} name${selected.length > 1 ? 's' : ''}`],
     ['Output',       outputDesc],
+    ['Compression',  describeCompression(getExportSettingsFromUI())],
   ];
 
   document.getElementById('confirmTitle').textContent = isSingle ? 'Generate as Single PDF' : 'Generate Certificates';
@@ -2070,6 +2277,15 @@ async function generateAll() {
   overlay.classList.add('show');
   const zip = doZip ? new JSZip() : null;
   const { jsPDF } = window.jspdf;
+  let exportBackground = null;
+
+  try {
+    exportBackground = await prepareExportBackground();
+  } catch (err) {
+    overlay.classList.remove('show');
+    toast('Failed to prepare background for export: ' + err.message, 'error');
+    return;
+  }
 
   for (let idx = 0; idx < selected.length; idx++) {
     if (_generationAborted) break;
@@ -2090,9 +2306,8 @@ async function generateAll() {
     const dateStr  = formatDateRange();
     const serialNum = getSerial(globalIdx >= 0 ? globalIdx : idx);
 
-    if (bgImage) {
-      const ext = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(bgImage, ext, 0, 0, 210, 297);
+    if (exportBackground) {
+      pdf.addImage(exportBackground.dataUrl, exportBackground.format, 0, 0, 210, 297);
     }
 
     pdf.setTextColor(r, g, b);
@@ -2166,6 +2381,16 @@ async function generateSinglePDF() {
   overlay.classList.add('show');
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  let exportBackground = null;
+
+  try {
+    exportBackground = await prepareExportBackground();
+  } catch (err) {
+    overlay.classList.remove('show');
+    toast('Failed to prepare background for export: ' + err.message, 'error');
+    return;
+  }
+
   const textColor = document.getElementById('textColor').value || '#1a1a2e';
   const r = parseInt(textColor.slice(1,3),16);
   const g = parseInt(textColor.slice(3,5),16);
@@ -2185,9 +2410,8 @@ async function generateSinglePDF() {
 
     if (idx > 0) pdf.addPage();
 
-    if (bgImage) {
-      const ext = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(bgImage, ext, 0, 0, 210, 297);
+    if (exportBackground) {
+      pdf.addImage(exportBackground.dataUrl, exportBackground.format, 0, 0, 210, 297);
     }
 
     pdf.setTextColor(r, g, b);
