@@ -2389,6 +2389,14 @@ function setupPreviewWheelZoom() {
   wrap.addEventListener('wheel', e => {
     const stage = document.getElementById('previewStage');
     if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    const isOverCertificate =
+      e.clientX >= stageRect.left &&
+      e.clientX <= stageRect.right &&
+      e.clientY >= stageRect.top &&
+      e.clientY <= stageRect.bottom;
+    if (!isOverCertificate) return;
+
     e.preventDefault();
 
     const oldZoom = previewZoom;
