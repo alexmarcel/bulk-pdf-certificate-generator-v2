@@ -4,5 +4,9 @@
       "file": "default_background.jpg",
       "label": "Default Background"
     }
+    {
+      "file": "with-sign.jpg",
+      "label": "Signed"
+    }
   ]
 }
