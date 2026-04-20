@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WINNIE Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e10;
+      --surface: #17171a;
+      --surface2: #1f1f24;
+      --surface3: #28282f;
+      --border: #2e2e38;
+      --accent: #c8a96e;
+      --accent-soft: rgba(200, 169, 110, 0.12);
+      --text: #e8e8f0;
+      --text-muted: #9a9aac;
+      --text-dim: #6d6d7c;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.65;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(14, 14, 16, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-family: 'DM Serif Display', serif;
+      color: var(--accent);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .brand-sub {
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .back-link {
+      border: 1px solid rgba(200, 169, 110, 0.35);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      color: var(--accent);
+      font-size: 13px;
+      white-space: nowrap;
+      background: var(--surface2);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 34px;
+    }
+
+    nav {
+      position: sticky;
+      top: 86px;
+      align-self: start;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 14px;
+    }
+
+    nav h2 {
+      margin: 0 0 10px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    nav a {
+      display: block;
+      padding: 7px 8px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    nav a:hover {
+      background: var(--surface2);
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .hero {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 26px;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-family: 'DM Serif Display', serif;
+      color: var(--text);
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.02;
+      font-weight: 400;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--text-muted);
+      max-width: 760px;
+      font-size: 17px;
+    }
+
+    section {
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      color: var(--accent);
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--text-muted);
+    }
+
+    ul, ol {
+      margin: 0 0 16px;
+      padding-left: 22px;
+      color: var(--text-muted);
+    }
+
+    li { margin-bottom: 7px; }
+
+    code {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.92em;
+      color: #f4e7c2;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 5px;
+    }
+
+    pre {
+      overflow-x: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--text-muted);
+    }
+
+    pre code {
+      border: none;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: table;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text);
+      background: linear-gradient(135deg, #403927 0%, #6d5b32 46%, #9a7a37 100%);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .note {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      color: var(--text-muted);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 12px 0 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .card strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        grid-template-columns: 1fr;
+        padding-top: 28px;
+      }
+
+      nav {
+        position: static;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <span class="brand-title">WINNIE</span>
+        <span class="brand-sub">Documentation</span>
+      </div>
+      <a class="back-link" href="index.html">Back to app</a>
+    </div>
+  </header>
+
+  <main>
+    <nav aria-label="Documentation sections">
+      <h2>Contents</h2>
+      <a href="#overview">Overview</a>
+      <a href="#files">Files and Deployment</a>
+      <a href="#templates">Templates</a>
+      <a href="#background">Background</a>
+      <a href="#event">Event Details</a>
+      <a href="#staff">Staff Lists</a>
+      <a href="#fields">Field Positions</a>
+      <a href="#preview">Preview</a>
+      <a href="#export">Export</a>
+      <a href="#backup">Backup and Restore</a>
+      <a href="#mobile">Mobile</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+    </nav>
+
+    <div class="content">
+      <div class="hero">
+        <h1>How to Use WINNIE</h1>
+        <p class="lead">WINNIE creates bulk PDF certificates from a certificate background, event details, and a list of recipients. It runs in the browser and does not require a database or application server.</p>
+      </div>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>The app is designed for fast certificate production. You prepare a background template, load a recipient list, adjust text placement, preview the result, and export certificates as individual PDFs, a ZIP archive, or one combined PDF.</p>
+        <div class="cards">
+          <div class="card">
+            <strong>No backend required</strong>
+            <p>All certificate generation happens in the browser with JavaScript, Canvas, jsPDF, JSZip, and FileSaver.</p>
+          </div>
+          <div class="card">
+            <strong>Bulk friendly</strong>
+            <p>TXT and CSV files are supported. CSV columns beyond the first become custom certificate fields.</p>
+          </div>
+          <div class="card">
+            <strong>Live preview</strong>
+            <p>The preview updates as you change text, positions, font, color, selected recipients, or background.</p>
+          </div>
+          <div class="card">
+            <strong>Reusable setup</strong>
+            <p>Backup and Restore Dataset saves the full working setup into a ZIP file.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="files">
+        <h2>Files and Deployment</h2>
+        <p>For normal use, keep these files together in the web root or Docker image:</p>
+        <pre><code>index.html
+documentation.html
+default_background.jpg
+namelist.txt
+template/
+  templates.json
+  default_background.jpg</code></pre>
+        <p>The Dockerfile copies the full project into the Nginx web root inside the container:</p>
+        <pre><code>FROM nginx:alpine
+COPY . /usr/share/nginx/html</code></pre>
+        <p>After Docker deployment, the app should be reachable at your mapped host and port. The documentation page is available at <code>/documentation.html</code>.</p>
+      </section>
+
+      <section id="templates">
+        <h2>Templates</h2>
+        <p>The Background panel includes a Template area. Templates are images stored in the <code>template/</code> folder and listed in <code>template/templates.json</code>.</p>
+        <h3>Add a Permanent Template</h3>
+        <ol>
+          <li>Copy the image into the <code>template/</code> folder.</li>
+          <li>Add the image to <code>template/templates.json</code>.</li>
+          <li>Refresh the app or click <strong>Refresh</strong> in the Template area.</li>
+          <li>Click the template thumbnail to apply it as the certificate background.</li>
+        </ol>
+        <pre><code>{
+  "images": [
+    {
+      "file": "default_background.jpg",
+      "label": "Default Background"
+    },
+    {
+      "file": "course-template.jpg",
+      "label": "Course Template"
+    }
+  ]
+}</code></pre>
+        <p class="note">In Docker, files copied during build are fixed inside the image. To add templates without rebuilding, mount a VPS folder to <code>/usr/share/nginx/html/template</code> when running the container.</p>
+      </section>
+
+      <section id="background">
+        <h2>Background</h2>
+        <p>The certificate background is the visual base used for every generated certificate.</p>
+        <h3>Auto-loaded Background</h3>
+        <p>If <code>default_background.jpg</code> exists beside <code>index.html</code>, WINNIE loads it automatically when the page opens.</p>
+        <h3>Template Background</h3>
+        <p>Use the Template area to select a predefined background from the <code>template/</code> folder.</p>
+        <h3>Manual Upload</h3>
+        <p>Click the upload zone or drag an image into the Background panel. JPG and PNG are recommended. A portrait A4 ratio works best.</p>
+        <h3>Fallback Background</h3>
+        <p>If no background is available, WINNIE generates a clean white certificate background with a gold border.</p>
+      </section>
+
+      <section id="event">
+        <h2>Event Details</h2>
+        <p>Use the Event Details panel to set the text that appears on every certificate.</p>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Event Title</td><td>Main certificate title or course name.</td><td><code>CERTIFICATE OF ATTENDANCE</code></td></tr>
+            <tr><td>Organizer</td><td>Department, unit, or institution issuing the certificate.</td><td><code>TRAINING UNIT</code></td></tr>
+            <tr><td>Location</td><td>Venue or campus. Hidden by default in Field Positions.</td><td><code>ILKKM TAWAU</code></td></tr>
+            <tr><td>Date From</td><td>Start date or single certificate date.</td><td><code>2026-04-20</code></td></tr>
+            <tr><td>Date To</td><td>Optional end date for date ranges.</td><td><code>2026-04-22</code></td></tr>
+            <tr><td>Serial Prefix</td><td>Prefix used before the auto-incrementing number.</td><td><code>CERT/2026/</code></td></tr>
+            <tr><td>Starting #</td><td>First serial number in the sequence.</td><td><code>1</code></td></tr>
+          </tbody>
+        </table>
+        <p>Date ranges are formatted automatically, including single-day dates, same-month ranges, and cross-month ranges.</p>
+      </section>
+
+      <section id="staff">
+        <h2>Staff Lists</h2>
+        <p>The Staff List panel controls who receives certificates.</p>
+        <h3>Plain Text</h3>
+        <p>Enter one name per line, or use comma-separated names. Names are converted to uppercase and duplicates are removed.</p>
+        <pre><code>JOHN DOE
+JANE SMITH
+AHMAD BIN ALI</code></pre>
+        <h3>CSV With Custom Fields</h3>
+        <p>CSV files use the first column as the recipient name. Every extra column becomes a custom field that can be positioned on the certificate.</p>
+        <pre><code>Name,Position,Phone Number
+JANE DOE,Officer 1,011123456
+JOHN DOE,Officer 2,011123457</code></pre>
+        <h3>Selection Tools</h3>
+        <ul>
+          <li><strong>Select All</strong> checks every recipient.</li>
+          <li><strong>None</strong> unchecks every recipient.</li>
+          <li><strong>Invert</strong> flips the current selection.</li>
+          <li><strong>Search</strong> filters the visible list by name.</li>
+          <li><strong>Filter</strong> shows all, checked, or unchecked names.</li>
+        </ul>
+      </section>
+
+      <section id="fields">
+        <h2>Field Positions</h2>
+        <p>Field Positions controls where text appears on the A4 certificate. Coordinates are in millimeters from the top-left of the page. A4 portrait is 210mm wide and 297mm tall.</p>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Default X</th><th>Default Y</th><th>Default Size</th><th>Visible</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Staff Name</td><td>105</td><td>123</td><td>20pt</td><td>Yes</td></tr>
+            <tr><td>Event Title</td><td>105</td><td>150</td><td>14pt</td><td>Yes</td></tr>
+            <tr><td>Date</td><td>105</td><td>178</td><td>13pt</td><td>Yes</td></tr>
+            <tr><td>Organizer</td><td>105</td><td>201</td><td>12pt</td><td>Yes</td></tr>
+            <tr><td>Location</td><td>105</td><td>225</td><td>12pt</td><td>No</td></tr>
+            <tr><td>Serial Number</td><td>105</td><td>278</td><td>8pt</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+        <p>Set <code>X</code> to <code>105</code> for centered text. Adjust <code>Y</code> to move text vertically. Use the visibility checkbox to hide fields you do not need.</p>
+      </section>
+
+      <section id="preview">
+        <h2>Preview</h2>
+        <p>The Live Preview shows the current certificate using the selected background, recipient, event text, typography, and field positions.</p>
+        <ul>
+          <li>Use the left and right arrows to move through selected recipients.</li>
+          <li>Unchecked recipients are skipped during preview navigation.</li>
+          <li>Long names should be checked manually before export to confirm alignment.</li>
+        </ul>
+      </section>
+
+      <section id="export">
+        <h2>Export</h2>
+        <p>WINNIE provides two export paths from the Generate controls.</p>
+        <h3>Download Certificates</h3>
+        <p>Creates one PDF per selected recipient. If <strong>Bundle as ZIP</strong> is checked, the PDFs are packaged into one ZIP file.</p>
+        <h3>Download as Single PDF</h3>
+        <p>Creates one multi-page PDF containing all selected recipients.</p>
+        <h3>Background Compression</h3>
+        <p>Before export, the confirmation popup lets you compress the background image. This can reduce ZIP or PDF size when the source image is large.</p>
+        <p class="note">Generated files are downloaded by the browser. They are not uploaded to a server.</p>
+      </section>
+
+      <section id="backup">
+        <h2>Backup and Restore</h2>
+        <p><strong>Backup Dataset</strong> saves the current setup into a ZIP file. The backup includes event details, typography, field positions, staff names, selections, custom CSV data, and the active background.</p>
+        <p><strong>Restore Dataset</strong> loads a backup ZIP and restores the saved setup. This is useful for recurring courses or sharing certificate configurations with another workstation.</p>
+      </section>
+
+      <section id="mobile">
+        <h2>Mobile</h2>
+        <p>On small screens, WINNIE switches to a tabbed layout with these sections: Background, Event, Typography, Staff, Fields, and Generate.</p>
+        <p>The preview remains visible while you switch between tabs, making it easier to adjust the certificate on a phone or tablet.</p>
+      </section>
+
+      <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <h3>Templates do not show</h3>
+        <p>Open <code>/template/templates.json</code> in the browser. If it returns 404, the folder was not copied or mounted into the served web root. If the JSON opens, check that filenames match the actual image files.</p>
+        <h3>Auto-load files do not work locally</h3>
+        <p>Opening <code>index.html</code> directly with <code>file://</code> blocks automatic fetches in many browsers. Use Docker, Nginx, Apache, or a local live server.</p>
+        <h3>PDF files are too large</h3>
+        <p>Use the background compression option during export, or replace the background with a smaller JPG.</p>
+        <h3>Text is misaligned</h3>
+        <p>Adjust the X and Y values in Field Positions. Preview several recipients before generating the full batch.</p>
+        <h3>CSV fields do not appear</h3>
+        <p>Make sure the CSV has a header row and at least two columns. The first column must contain names.</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

@@ -528,6 +528,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     padding: 14px 20px;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
@@ -546,6 +547,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .preview-nav span {
@@ -558,11 +561,13 @@
 
   .preview-wrap {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 30px;
+    position: relative;
+    touch-action: none;
     background: repeating-linear-gradient(
       45deg,
       var(--bg),
@@ -572,10 +577,48 @@
     );
   }
 
+  .preview-wrap:focus {
+    outline: 1px solid rgba(200, 169, 110, 0.35);
+    outline-offset: -1px;
+  }
+
+  .preview-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .preview-zoom-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 46px;
+    text-align: center;
+  }
+
+  .preview-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    transform-origin: center center;
+    will-change: transform;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .preview-stage.dragging {
+    cursor: grabbing;
+  }
+
   #previewCanvas {
     max-width: 100%;
+    max-height: 70vh;
+    width: auto;
     border-radius: 4px;
     box-shadow: 0 20px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    display: block;
+    pointer-events: none;
   }
 
   /* GENERATE FOOTER */
@@ -1025,6 +1068,8 @@
     .preview-header {
       padding: 6px 12px;
       flex-shrink: 0;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .preview-wrap {
@@ -1038,6 +1083,17 @@
       max-height: 100% !important;
       max-width: 100% !important;
       width: auto !important;
+    }
+
+    .preview-tools {
+      gap: 4px;
+      order: 3;
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .preview-zoom-label {
+      min-width: 42px;
     }
 
     .generate-bar { display: none; }
@@ -1326,7 +1382,10 @@
     <!-- MOBILE-ONLY: Generate + Backup/Restore -->
     <div id="section-generate">
       <div class="section-body" id="body-generate">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;">WINNIE v1.0.1-beta.1</div>
+        <div style="font-size:11px;color:#b8b8c8;margin-bottom:16px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span>WINNIE v1.0.1-beta.1</span>
+          <a href="documentation.html" target="_blank" rel="noopener" style="color:#e2c987;text-decoration:none;">Documentation</a>
+        </div>
         <label class="checkbox-wrap" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;color:var(--text-muted);cursor:pointer;">
           <input type="checkbox" id="zipAllMobile" checked onchange="document.getElementById('zipAll').checked=this.checked;">
           Bundle as ZIP
@@ -1358,15 +1417,22 @@
         <span id="previewPersonLabel">—</span>
         <button class="btn btn-ghost btn-sm" onclick="nextPerson()"><i data-lucide="chevron-right"></i></button>
       </div>
+      <div class="preview-tools" aria-label="Preview zoom controls">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="zoomPreview(-1)" title="Zoom out">-</button>
+        <span class="preview-zoom-label" id="previewZoomLabel">100%</span>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="zoomPreview(1)" title="Zoom in">+</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="fitPreview()" title="Fit preview">Fit</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="resetPreviewView()" title="Reset preview">Reset</button>
+      </div>
     </div>
-    <div class="preview-wrap" id="previewWrap">
+    <div class="preview-wrap" id="previewWrap" tabindex="0" aria-label="Live certificate preview. Use mouse wheel to zoom and drag to pan.">
       <div class="no-preview">
         <div class="no-preview-icon"><i data-lucide="award"></i></div>
         <div class="no-preview-text">Configure fields to see a live preview</div>
       </div>
     </div>
     <div class="generate-bar">
-      <label class="checkbox-wrap">WINNIE v1.0.1-beta.1</label>
+      <label class="checkbox-wrap" style="color:#b8b8c8;">WINNIE v1.0.1-beta.1 <a href="documentation.html" target="_blank" rel="noopener" style="color:#e2c987;text-decoration:none;margin-left:10px;">Documentation</a></label>
       <div style="flex:1"></div>
       <label class="checkbox-wrap">
         <input type="checkbox" id="zipAll" checked onchange="const m=document.getElementById('zipAllMobile');if(m)m.checked=this.checked;">
@@ -1466,6 +1532,13 @@ let staffSelected = [];
 let staffCustomData = {}; // { "PERSON NAME": { "col_header": "value", ... } }
 let previewPersonIndex = 0;
 let previewCanvas = null;
+let previewZoom = 1;
+let previewPanX = 0;
+let previewPanY = 0;
+let previewDrag = null;
+const PREVIEW_MIN_ZOOM = 0.5;
+const PREVIEW_MAX_ZOOM = 4;
+const PREVIEW_ZOOM_STEP = 0.25;
 const EXPORT_SETTINGS_KEY = 'winnie_export_settings_v1';
 const DEFAULT_EXPORT_SETTINGS = {
   compressionEnabled: true,
@@ -1492,6 +1565,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFieldControls();
   renderStaffList();
   setupDragDrop();
+  setupPreviewWheelZoom();
   autoLoadDefaultBackground();
   loadTemplateGallery();
   autoLoadNamelist();
@@ -2198,10 +2272,122 @@ function updatePreview() {
 }
 
 function finishPreview(canvas, wrap) {
-  wrap.innerHTML = '';
-  canvas.style.maxHeight = '70vh';
-  canvas.style.width = 'auto';
-  wrap.appendChild(canvas);
+  let stage = document.getElementById('previewStage');
+  if (!stage) {
+    wrap.innerHTML = '';
+    stage = document.createElement('div');
+    stage.id = 'previewStage';
+    stage.className = 'preview-stage';
+    setupPreviewPan(stage);
+    wrap.appendChild(stage);
+  }
+  stage.innerHTML = '';
+  stage.appendChild(canvas);
+  previewCanvas = canvas;
+  applyPreviewTransform();
+}
+
+function clampPreviewZoom(value) {
+  return Math.min(PREVIEW_MAX_ZOOM, Math.max(PREVIEW_MIN_ZOOM, value));
+}
+
+function applyPreviewTransform() {
+  const stage = document.getElementById('previewStage');
+  if (!stage) return;
+  previewZoom = clampPreviewZoom(previewZoom);
+  stage.style.transform = `translate(${previewPanX}px, ${previewPanY}px) scale(${previewZoom})`;
+  const label = document.getElementById('previewZoomLabel');
+  if (label) label.textContent = `${Math.round(previewZoom * 100)}%`;
+}
+
+function zoomPreview(direction) {
+  previewZoom = clampPreviewZoom(previewZoom + direction * PREVIEW_ZOOM_STEP);
+  applyPreviewTransform();
+}
+
+function setupPreviewWheelZoom() {
+  const wrap = document.getElementById('previewWrap');
+  if (!wrap) return;
+  wrap.addEventListener('wheel', e => {
+    const stage = document.getElementById('previewStage');
+    if (!stage) return;
+    e.preventDefault();
+
+    const oldZoom = previewZoom;
+    const direction = e.deltaY > 0 ? -1 : 1;
+    const nextZoom = clampPreviewZoom(oldZoom + direction * PREVIEW_ZOOM_STEP);
+    if (nextZoom === oldZoom) return;
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const pointerX = e.clientX - (wrapRect.left + wrapRect.width / 2);
+    const pointerY = e.clientY - (wrapRect.top + wrapRect.height / 2);
+    const zoomRatio = nextZoom / oldZoom;
+
+    previewPanX = pointerX - (pointerX - previewPanX) * zoomRatio;
+    previewPanY = pointerY - (pointerY - previewPanY) * zoomRatio;
+    previewZoom = nextZoom;
+    applyPreviewTransform();
+  }, { passive: false });
+}
+
+function resetPreviewView() {
+  previewZoom = 1;
+  previewPanX = 0;
+  previewPanY = 0;
+  applyPreviewTransform();
+}
+
+function fitPreview() {
+  const wrap = document.getElementById('previewWrap');
+  const canvas = document.getElementById('previewCanvas');
+  if (!wrap || !canvas) return;
+
+  const wrapStyle = getComputedStyle(wrap);
+  const padX = parseFloat(wrapStyle.paddingLeft) + parseFloat(wrapStyle.paddingRight);
+  const padY = parseFloat(wrapStyle.paddingTop) + parseFloat(wrapStyle.paddingBottom);
+  const availableW = Math.max(1, wrap.clientWidth - padX);
+  const availableH = Math.max(1, wrap.clientHeight - padY);
+  const baseW = canvas.offsetWidth || canvas.width;
+  const baseH = canvas.offsetHeight || canvas.height;
+
+  previewZoom = clampPreviewZoom(Math.min(availableW / baseW, availableH / baseH));
+  previewPanX = 0;
+  previewPanY = 0;
+  applyPreviewTransform();
+}
+
+function setupPreviewPan(stage) {
+  stage.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    previewDrag = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      panX: previewPanX,
+      panY: previewPanY,
+    };
+    stage.classList.add('dragging');
+    stage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  stage.addEventListener('pointermove', e => {
+    if (!previewDrag || previewDrag.id !== e.pointerId) return;
+    previewPanX = previewDrag.panX + e.clientX - previewDrag.startX;
+    previewPanY = previewDrag.panY + e.clientY - previewDrag.startY;
+    applyPreviewTransform();
+    e.preventDefault();
+  });
+
+  const stopDrag = e => {
+    if (!previewDrag || previewDrag.id !== e.pointerId) return;
+    previewDrag = null;
+    stage.classList.remove('dragging');
+    try { stage.releasePointerCapture(e.pointerId); } catch (err) {}
+  };
+
+  stage.addEventListener('pointerup', stopDrag);
+  stage.addEventListener('pointercancel', stopDrag);
 }
 
 function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
@@ -2689,6 +2875,9 @@ function resetAll() {
   staffSelected = [];
   staffCustomData = {};
   previewPersonIndex = 0;
+  previewZoom = 1;
+  previewPanX = 0;
+  previewPanY = 0;
   FIELDS = BASE_FIELDS.map(f => ({ ...f }));
   setBgName('');
   setActiveTemplateCard('');
