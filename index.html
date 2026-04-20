@@ -516,6 +516,47 @@
     padding: 4px 4px !important;
   }
 
+  .field-mini::-webkit-outer-spin-button,
+  .field-mini::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .field-mini {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  .field-step-control {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .field-step-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .field-step-btn {
+    width: 16px;
+    height: 13px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface3);
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .field-step-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   .field-mini-label {
     font-size: 9px;
     color: var(--text-dim);
@@ -2146,15 +2187,33 @@ function renderFieldControls() {
       <div>
         <div class="field-inputs">
           <div>
-            <input type="number" class="field-mini" id="fx-${f.id}" value="${f.xMm}" min="0" max="210" step="1" oninput="updateField(${i},'xMm',parseFloat(this.value))">
+            <div class="field-step-control">
+              <input type="number" class="field-mini" id="fx-${f.id}" value="${f.xMm}" min="0" max="210" step="1" onkeydown="handleFieldArrow(event, ${i}, 'xMm', this, 1, -1)" oninput="updateField(${i},'xMm',parseFloat(this.value))">
+              <div class="field-step-buttons" aria-label="Adjust X position">
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'xMm', 'fx-${f.id}', 1)" title="Increase X">▲</button>
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'xMm', 'fx-${f.id}', -1)" title="Decrease X">▼</button>
+              </div>
+            </div>
             <div class="field-mini-label">X mm</div>
           </div>
           <div>
-            <input type="number" class="field-mini" id="fy-${f.id}" value="${f.yMm}" min="1" max="290" step="1" oninput="updateField(${i},'yMm',parseFloat(this.value))">
+            <div class="field-step-control">
+              <input type="number" class="field-mini" id="fy-${f.id}" value="${f.yMm}" min="1" max="290" step="1" onkeydown="handleFieldArrow(event, ${i}, 'yMm', this, -1, 1)" oninput="updateField(${i},'yMm',parseFloat(this.value))" title="ArrowUp moves text up; ArrowDown moves text down">
+              <div class="field-step-buttons" aria-label="Move Y position">
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'yMm', 'fy-${f.id}', -1)" title="Move text up">▲</button>
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'yMm', 'fy-${f.id}', 1)" title="Move text down">▼</button>
+              </div>
+            </div>
             <div class="field-mini-label">Y mm</div>
           </div>
           <div>
-            <input type="number" class="field-mini" id="fsize-${f.id}" value="${f.fontSize}" min="6" max="48" step="1" oninput="updateField(${i},'fontSize',parseFloat(this.value))">
+            <div class="field-step-control">
+              <input type="number" class="field-mini" id="fsize-${f.id}" value="${f.fontSize}" min="6" max="48" step="1" onkeydown="handleFieldArrow(event, ${i}, 'fontSize', this, 1, -1)" oninput="updateField(${i},'fontSize',parseFloat(this.value))">
+              <div class="field-step-buttons" aria-label="Adjust font size">
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'fontSize', 'fsize-${f.id}', 1)" title="Increase font size">▲</button>
+                <button class="field-step-btn" type="button" onclick="adjustMiniField(${i}, 'fontSize', 'fsize-${f.id}', -1)" title="Decrease font size">▼</button>
+              </div>
+            </div>
             <div class="field-mini-label">pt</div>
           </div>
         </div>
@@ -2166,6 +2225,25 @@ function renderFieldControls() {
 function updateField(i, key, val) {
   FIELDS[i][key] = val;
   updatePreview();
+}
+
+function handleFieldArrow(event, i, key, input, upDirection, downDirection) {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+  event.preventDefault();
+  adjustMiniField(i, key, input.id, event.key === 'ArrowUp' ? upDirection : downDirection);
+}
+
+function adjustMiniField(i, key, inputId, direction) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const step = parseFloat(input.step) || 1;
+  const min = Number.isFinite(parseFloat(input.min)) ? parseFloat(input.min) : -Infinity;
+  const max = Number.isFinite(parseFloat(input.max)) ? parseFloat(input.max) : Infinity;
+  const current = Number.isFinite(parseFloat(input.value)) ? parseFloat(input.value) : FIELDS[i][key];
+  const next = Math.min(max, Math.max(min, current + direction * step));
+
+  input.value = String(next);
+  updateField(i, key, next);
 }
 
 // ─── COLOR SYNC ───────────────────────────────────────────────────────────────
@@ -2422,7 +2500,7 @@ function drawFields(ctx, personName, serialNum, dateStr, textColor, W, H) {
       v = baseVals[f.id];
     }
     if (!v) return;
-    const ptToPx = f.fontSize * (H / 297 / 3.779528);
+    const ptToPx = f.fontSize * (96 / 72);
     ctx.font = `${f.bold ? 'bold ' : ''}${ptToPx}px ${canvasFontFam}`;
     ctx.fillText(v, mmToX(f.xMm), mmToY(f.yMm));
   });
