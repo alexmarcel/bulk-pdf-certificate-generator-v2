@@ -176,10 +176,16 @@
     padding: 14px 20px;
     cursor: pointer;
     user-select: none;
-    transition: background 0.15s;
+    background: linear-gradient(135deg, #403927 0%, #6d5b32 46%, #9a7a37 100%);
+    border-bottom: 1px solid rgba(202, 169, 96, 0.24);
+    box-shadow: inset 0 1px 0 rgba(255, 238, 184, 0.12);
+    transition: filter 0.15s, box-shadow 0.15s;
   }
 
-  .section-header:hover { background: var(--surface2); }
+  .section-header:hover {
+    filter: brightness(1.08);
+    box-shadow: inset 0 1px 0 rgba(255, 238, 184, 0.16), 0 6px 18px rgba(154, 122, 55, 0.14);
+  }
 
   .section-label {
     display: flex;
@@ -189,19 +195,21 @@
     letter-spacing: 1.5px;
     text-transform: uppercase;
     font-weight: 600;
-    color: var(--accent);
+    color: #f4e7c2;
   }
 
   .section-label .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--accent);
+    background: #f4e7c2;
+    box-shadow: 0 0 0 3px rgba(244, 231, 194, 0.12);
   }
 
   .section-toggle {
     font-size: 10px;
-    color: var(--text-dim);
+    color: #f4e7c2;
+    opacity: 0.82;
     transition: transform 0.2s;
   }
 
@@ -343,6 +351,90 @@
   .upload-icon svg { width: 28px; height: 28px; stroke: currentColor; }
   .upload-text { font-size: 12px; color: var(--text-muted); }
   .upload-hint { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+  .template-panel {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .template-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .template-title {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .template-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .template-card {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  }
+
+  .template-card:hover,
+  .template-card.active {
+    border-color: var(--accent);
+    background: rgba(200, 169, 110, 0.08);
+  }
+
+  .template-card:hover { transform: translateY(-1px); }
+
+  .template-card img {
+    width: 100%;
+    aspect-ratio: 210 / 297;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+    background: var(--surface3);
+  }
+
+  .template-name {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .template-empty {
+    grid-column: 1 / -1;
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.45;
+    padding: 10px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+  }
+
+  .template-note {
+    margin: 8px 0 0;
+    color: var(--text-dim);
+    font-size: 10px;
+    line-height: 1.45;
+  }
 
   /* STAFF LIST */
   .staff-list-container {
@@ -1087,6 +1179,16 @@
           <span id="bgName" style="flex:1; font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace;"></span>
           <button onclick="clearBackground()" title="Remove background and use fallback" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s; display:flex; align-items:center;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'"><i data-lucide="x" style="width:14px;height:14px"></i></button>
         </div>
+        <div class="template-panel">
+          <div class="template-head">
+            <span class="template-title">Template</span>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="loadTemplateGallery(true)">Refresh</button>
+          </div>
+          <div class="template-gallery" id="templateGallery">
+            <div class="template-empty">Loading templates...</div>
+          </div>
+          <p class="template-note">Place JPG, PNG, or WebP files in the template folder and list them in template/templates.json.</p>
+        </div>
       </div>
     </div>
 
@@ -1369,6 +1471,8 @@ const DEFAULT_EXPORT_SETTINGS = {
   compressionEnabled: true,
   compressionLevel: 2,
 };
+const TEMPLATE_MANIFEST_PATH = 'template/templates.json';
+const TEMPLATE_IMAGE_RE = /\.(png|jpe?g|webp|gif)$/i;
 
 const BASE_FIELDS = [
   { id: 'name',       label: 'Staff Name',    xMm: 105, yMm: 123, fontSize: 20, visible: true,  bold: true,  isCustom: false },
@@ -1389,8 +1493,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStaffList();
   setupDragDrop();
   autoLoadDefaultBackground();
+  loadTemplateGallery();
   autoLoadNamelist();
-  restoreSectionStates();
+  collapseSidebarSections();
   initExportSettings();
   if (window.lucide) lucide.createIcons();
   setupTooltips();
@@ -1501,19 +1606,16 @@ function toggleSection(id) {
   try { localStorage.setItem('winnie_section_' + id, open ? '1' : '0'); } catch(e) {}
 }
 
-function restoreSectionStates() {
+function collapseSidebarSections() {
   ['bg','event','typo','staff','fields'].forEach(id => {
-    const saved = localStorage.getItem('winnie_section_' + id);
-    if (saved === null) return; // no saved state — leave default
     const body   = document.getElementById('body-' + id);
     const toggle = document.getElementById('toggle-' + id);
     const header = document.getElementById('header-' + id);
     if (!body || !toggle) return;
-    const open = saved === '1';
-    body.classList.toggle('open', open);
-    toggle.classList.toggle('open', open);
-    toggle.textContent = open ? '▲' : '▼';
-    if (header) header.setAttribute('aria-expanded', open ? 'true' : 'false');
+    body.classList.remove('open');
+    toggle.classList.remove('open');
+    toggle.textContent = '▼';
+    if (header) header.setAttribute('aria-expanded', 'false');
   });
 }
 
@@ -1558,6 +1660,7 @@ function setBgName(text) {
 function clearBackground() {
   generateFallbackBackground();
   document.getElementById('bgFile').value = '';
+  setActiveTemplateCard('');
   updatePreview();
   toast('Background removed — fallback applied', 'success');
 }
@@ -1569,10 +1672,113 @@ function loadBackground(event) {
   reader.onload = e => {
     bgImage = e.target.result;
     setBgName(file.name);
+    setActiveTemplateCard('');
     updatePreview();
     toast('Background loaded: ' + file.name, 'success');
   };
   reader.readAsDataURL(file);
+}
+
+async function loadTemplateGallery(showToast = false) {
+  const gallery = document.getElementById('templateGallery');
+  if (!gallery) return;
+  gallery.innerHTML = '<div class="template-empty">Loading templates...</div>';
+
+  let templates = [];
+  try {
+    const res = await fetch(TEMPLATE_MANIFEST_PATH, { cache: 'no-store' });
+    if (res.ok) {
+      templates = normalizeTemplateEntries(await res.json());
+    }
+  } catch (e) {}
+
+  if (!templates.length) {
+    templates = await fetchTemplateDirectory();
+  }
+
+  const seen = new Set();
+  templates = templates.filter(item => {
+    if (!item.path || !TEMPLATE_IMAGE_RE.test(item.path) || seen.has(item.path)) return false;
+    seen.add(item.path);
+    return true;
+  });
+
+  if (!templates.length) {
+    gallery.innerHTML = '<div class="template-empty">No template images found. Add image files to template/ and list them in template/templates.json.</div>';
+    if (showToast) toast('No template images found', 'info');
+    return;
+  }
+
+  gallery.innerHTML = templates.map(item => `
+    <button class="template-card" type="button" data-template-path="${escapeHtml(item.path)}" data-template-label="${escapeHtml(item.label)}" onclick="loadTemplateBackgroundFromCard(this)">
+      <img src="${escapeHtml(item.path)}" alt="${escapeHtml(item.label)} template preview" loading="lazy">
+      <span class="template-name">${escapeHtml(item.label)}</span>
+    </button>
+  `).join('');
+  if (window.lucide) lucide.createIcons({ nodes: [gallery] });
+  if (showToast) toast(`${templates.length} template${templates.length > 1 ? 's' : ''} loaded`, 'success');
+}
+
+function normalizeTemplateEntries(raw) {
+  const list = Array.isArray(raw) ? raw : Array.isArray(raw?.images) ? raw.images : [];
+  return list.map(entry => {
+    const value = typeof entry === 'string' ? entry : entry?.file || entry?.path || '';
+    const clean = String(value).replace(/^\/+/, '');
+    const path = clean.startsWith('template/') ? clean : `template/${clean}`;
+    const label = typeof entry === 'object' && entry?.label
+      ? String(entry.label)
+      : path.split('/').pop().replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+    return { path, label };
+  });
+}
+
+async function fetchTemplateDirectory() {
+  try {
+    const res = await fetch('template/', { cache: 'no-store' });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return Array.from(doc.querySelectorAll('a[href]')).map(a => {
+      const href = a.getAttribute('href') || '';
+      const url = new URL(href, res.url);
+      const filename = decodeURIComponent(url.pathname.split('/').pop() || '');
+      return {
+        path: `template/${filename}`,
+        label: filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '),
+      };
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+function setActiveTemplateCard(path) {
+  document.querySelectorAll('.template-card').forEach(card => {
+    card.classList.toggle('active', !!path && card.dataset.templatePath === path);
+  });
+}
+
+function loadTemplateBackgroundFromCard(card) {
+  loadTemplateBackground(card.dataset.templatePath, card.dataset.templateLabel);
+}
+
+function loadTemplateBackground(path, label) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    const mime = path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    bgImage = canvas.toDataURL(mime, 0.95);
+    document.getElementById('bgFile').value = '';
+    setBgName(`${label} (template)`);
+    setActiveTemplateCard(path);
+    updatePreview();
+    toast('Template loaded: ' + label, 'success');
+  };
+  img.onerror = () => toast('Failed to load template: ' + label, 'error');
+  img.src = path;
 }
 
 // ─── STAFF LIST ───────────────────────────────────────────────────────────────
@@ -2466,6 +2672,7 @@ function setupDragDrop() {
       reader.onload = ev => {
         bgImage = ev.target.result;
         setBgName(f.name);
+        setActiveTemplateCard('');
         updatePreview();
         toast('Background loaded: ' + f.name, 'success');
       };
@@ -2484,6 +2691,7 @@ function resetAll() {
   previewPersonIndex = 0;
   FIELDS = BASE_FIELDS.map(f => ({ ...f }));
   setBgName('');
+  setActiveTemplateCard('');
   document.getElementById('bgFile').value = '';
   document.getElementById('staffTextarea').value = '';
   document.getElementById('staffFile').value = '';
@@ -2658,6 +2866,7 @@ async function restoreSet(event) {
     // --- Load background image ---
     bgImage = null;
     setBgName('');
+    setActiveTemplateCard('');
     const bgPng = zip.file('background.png');
     const bgJpg = zip.file('background.jpg') || zip.file('background.jpeg');
     const bgFile = bgPng || bgJpg;
