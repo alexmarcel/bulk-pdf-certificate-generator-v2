@@ -1,0 +1,10 @@
+.git
+.gitignore
+.claude
+.agents
+.codex
+node_modules
+test
+*.log
+Dockerfile*
+README.md

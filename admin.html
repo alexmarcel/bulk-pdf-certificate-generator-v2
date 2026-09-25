@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Administration | WINNIE</title>
+  <style>
+    :root { color-scheme:dark; --bg:#0e0e10; --card:#17171a; --surface:#202026; --border:#30303a; --gold:#c8a96e; --text:#e8e8f0; --muted:#8c8c9f; --danger:#e76d6d; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(960px,calc(100% - 32px)); margin:48px auto; } .card { padding:28px; border:1px solid var(--border); border-radius:14px; background:var(--card); }
+    #loginView { width:min(410px,calc(100% - 32px)); margin:10vh auto; } h1 { margin:0 0 6px; color:var(--gold); font-family:Georgia,serif; } p { color:var(--muted); }
+    label { display:block; margin:18px 0 7px; font-size:13px; font-weight:650; } input { width:100%; min-height:44px; padding:0 13px; border:1px solid var(--border); border-radius:8px; background:#101014; color:var(--text); font:inherit; outline:none; }
+    input:focus { border-color:var(--gold); box-shadow:0 0 0 3px #c8a96e22; } button { min-height:42px; padding:0 16px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; font-weight:650; cursor:pointer; }
+    button.primary { background:var(--gold); border-color:var(--gold); color:#17120a; } button.danger { color:#ff9c9c; border-color:#703b3b; } button:disabled { opacity:.6; cursor:wait; }
+    #loginForm button { width:100%; margin-top:22px; } .error { min-height:20px; color:#ff8d8d; font-size:13px; } .topbar,.create-row,.table-head { display:flex; gap:12px; align-items:center; } .topbar { justify-content:space-between; margin-bottom:22px; }
+    .create-row input { flex:1; } .search { margin:20px 0 12px; } table { width:100%; border-collapse:collapse; } th,td { padding:13px 10px; border-bottom:1px solid var(--border); text-align:left; } th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; } td:last-child,th:last-child { text-align:right; }
+    .empty { padding:28px 10px; color:var(--muted); text-align:center; } [hidden] { display:none!important; }
+    @media(max-width:600px) { main { margin:20px auto; } .card { padding:20px; } .create-row { align-items:stretch; flex-direction:column; } th:nth-child(2),td:nth-child(2) { display:none; } }
+  </style>
+</head>
+<body>
+  <section id="loginView" class="card" hidden>
+    <h1>WINNIE Admin</h1><p>Sign in to manage access IDs.</p>
+    <form id="adminLoginForm">
+      <label for="adminId">Admin ID</label><input id="adminId" autocomplete="username" required autofocus>
+      <label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+      <button class="primary" id="loginButton">Sign in</button><p id="loginError" class="error" role="alert"></p>
+    </form>
+  </section>
+  <main id="adminView" hidden>
+    <div class="topbar"><div><h1>ID Administration</h1><p>Create or revoke access to WINNIE.</p></div><button id="logoutButton">Logout</button></div>
+    <section class="card">
+      <form id="createForm" class="create-row"><input id="newId" maxlength="128" placeholder="New ID" aria-label="New ID" required><button class="primary" id="createButton">Create ID</button></form>
+      <p id="createError" class="error" role="alert"></p>
+      <input class="search" id="searchInput" type="search" placeholder="Search IDs…" aria-label="Search IDs">
+      <div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Created</th><th>Action</th></tr></thead><tbody id="idRows"></tbody></table></div>
+      <div id="emptyState" class="empty" hidden>No IDs found.</div>
+    </section>
+  </main>
+  <script>
+    const loginView=document.getElementById('loginView'),adminView=document.getElementById('adminView'),rows=document.getElementById('idRows'),empty=document.getElementById('emptyState');
+    let ids=[];
+    function showLogin(){loginView.hidden=false;adminView.hidden=true;}
+    function showAdmin(){loginView.hidden=true;adminView.hidden=false;loadIds();}
+    async function api(url,options={}){const response=await fetch(url,options);if(response.status===401||response.status===403){showLogin();throw new Error('Authentication required');}if(!response.ok){let body={};try{body=await response.json();}catch{}throw new Error(body.error||'Request failed');}return response.status===204?null:response.json();}
+    async function loadIds(){try{const data=await api('/api/admin/ids');ids=data.ids;render();}catch(error){if(error.message!=='Authentication required')document.getElementById('createError').textContent=error.message;}}
+    function render(){const query=document.getElementById('searchInput').value.trim().toLocaleLowerCase('en-US');const visible=ids.filter(item=>item.id.toLocaleLowerCase('en-US').includes(query));rows.replaceChildren(...visible.map(item=>{const tr=document.createElement('tr'),id=document.createElement('td'),date=document.createElement('td'),action=document.createElement('td'),button=document.createElement('button');id.textContent=item.id;date.textContent=new Date(item.createdAt).toLocaleString();button.textContent='Delete';button.className='danger';button.addEventListener('click',()=>removeId(item.id));action.append(button);tr.append(id,date,action);return tr;}));empty.hidden=visible.length!==0;}
+    async function removeId(id){if(!confirm(`Delete ID “${id}”? Any active session using it will be signed out.`))return;try{await api('/api/admin/ids/'+encodeURIComponent(id),{method:'DELETE'});await loadIds();}catch(error){document.getElementById('createError').textContent=error.message;}}
+    document.getElementById('adminLoginForm').addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('loginButton'),error=document.getElementById('loginError');error.textContent='';button.disabled=true;try{const response=await fetch('/auth/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:document.getElementById('adminId').value,password:document.getElementById('adminPassword').value})});if(!response.ok){let body={};try{body=await response.json();}catch{}throw new Error(body.error||'Invalid administrator credentials');}document.getElementById('adminPassword').value='';showAdmin();}catch(e){error.textContent=e.message;}finally{button.disabled=false;}});
+    document.getElementById('createForm').addEventListener('submit',async event=>{event.preventDefault();const input=document.getElementById('newId'),error=document.getElementById('createError'),button=document.getElementById('createButton');error.textContent='';button.disabled=true;try{await api('/api/admin/ids',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:input.value})});input.value='';await loadIds();input.focus();}catch(e){error.textContent=e.message;}finally{button.disabled=false;}});
+    document.getElementById('searchInput').addEventListener('input',render);
+    document.getElementById('logoutButton').addEventListener('click',async()=>{await fetch('/auth/logout',{method:'POST'});showLogin();});
+    fetch('/auth/status').then(r=>r.ok?r.json():null).then(status=>status?.role==='admin'?showAdmin():showLogin()).catch(showLogin);
+  </script>
+</body>
+</html>

@@ -328,7 +328,7 @@
     <div class="content">
       <div class="hero">
         <h1>How to Use WINNIE</h1>
-        <p class="lead">WINNIE creates bulk PDF certificates from a certificate background, event details, and a list of recipients. It runs in the browser and does not require a database or application server.</p>
+        <p class="lead">WINNIE creates bulk PDF certificates from a certificate background, event details, and a list of recipients. Certificate rendering runs in the browser, while a small authenticated server controls access.</p>
       </div>
 
       <section id="overview">
@@ -336,8 +336,8 @@
         <p>The app is designed for fast certificate production. You prepare a background template, load a recipient list, adjust text placement, preview the result, and export certificates as individual PDFs, a ZIP archive, or one combined PDF.</p>
         <div class="cards">
           <div class="card">
-            <strong>No backend required</strong>
-            <p>All certificate generation happens in the browser with JavaScript, Canvas, jsPDF, JSZip, and FileSaver.</p>
+            <strong>Private certificate processing</strong>
+            <p>Certificate generation happens in the browser with JavaScript, Canvas, jsPDF, JSZip, and FileSaver. The server handles only access IDs and protected files.</p>
           </div>
           <div class="card">
             <strong>Bulk friendly</strong>
@@ -356,18 +356,16 @@
 
       <section id="files">
         <h2>Files and Deployment</h2>
-        <p>For normal use, keep these files together in the web root or Docker image:</p>
-        <pre><code>index.html
-documentation.html
-default_background.jpg
-namelist.txt
-template/
-  templates.json
-  default_background.jpg</code></pre>
-        <p>The Dockerfile copies the full project into the Nginx web root inside the container:</p>
-        <pre><code>FROM nginx:alpine
-COPY . /usr/share/nginx/html</code></pre>
-        <p>After Docker deployment, the app should be reachable at your mapped host and port. The documentation page is available at <code>/documentation.html</code>.</p>
+        <p>Build and run the authenticated Docker image with required administrator credentials and persistent database storage:</p>
+        <pre><code>docker build -t winnie .
+docker run -d --name winnie \
+  -p 8080:8080 \
+  -e WINNIE_ADMIN_ID="admin" \
+  -e WINNIE_ADMIN_PASSWORD="replace-with-a-strong-password" \
+  -v winnie-data:/data \
+  winnie</code></pre>
+        <p>Open <code>/admin</code> and use the configured administrator credentials to create or delete access IDs. Users sign in at <code>/login</code>. Both administrator environment variables are required, and IDs persist in <code>/data/winnie.db</code>.</p>
+        <p>Use an HTTPS reverse proxy in production. Back up the SQLite file from the persistent <code>/data</code> volume, stopping the container or using a SQLite-aware snapshot before copying a live database. Documentation and all application assets require an authenticated user session.</p>
       </section>
 
       <section id="templates">

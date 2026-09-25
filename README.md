@@ -1,19 +1,19 @@
 # WINNIE
 ### Web-based Institutional Nursing Name-list Issuance of E-Certificates
 
-> A single-file, no-install web application for generating bulk PDF certificates — built for nursing and healthcare training institutions.
+> A Docker-hosted, ID-protected web application for generating bulk PDF certificates — built for nursing and healthcare training institutions.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![No Backend](https://img.shields.io/badge/backend-none-brightgreen)
+![Node.js](https://img.shields.io/badge/server-Node.js-brightgreen)
 ![Mobile Ready](https://img.shields.io/badge/mobile-ready-blueviolet)
 
 ---
 
 ## What is WINNIE?
 
-WINNIE is a browser-based certificate generator designed for institutions that issue certificates in bulk — such as after nursing courses, in-service training, or continuing professional development programmes. It runs entirely in the browser with no server, no installation, and no internet connection required (after first load).
+WINNIE is a browser-based certificate generator designed for institutions that issue certificates in bulk — such as after nursing courses, in-service training, or continuing professional development programmes. Certificate generation remains in the browser, while a small Node.js server protects access and stores administrator-issued IDs in SQLite.
 
-Everything lives in a single `index.html` file. Drop it on a web server alongside your background image and name list, and it's ready to use.
+Deploy it with Docker, configure the administrator credentials through environment variables, and retain `/data` as a persistent volume.
 
 <img width="1304" height="946" alt="tent-tree" src="https://github.com/user-attachments/assets/5c45e802-b6e6-432e-a5aa-38fc28913b5d" />
 
@@ -55,7 +55,34 @@ your-folder/
 
 ## Installation & Setup
 
-### Option A — Apache / Nginx Web Server (recommended)
+### Authenticated Docker deployment (required)
+
+Build the image:
+
+```bash
+docker build -t winnie .
+```
+
+Run it with administrator credentials and persistent SQLite storage:
+
+```bash
+docker run -d --name winnie \
+  -p 8080:8080 \
+  -e WINNIE_ADMIN_ID="admin" \
+  -e WINNIE_ADMIN_PASSWORD="replace-with-a-strong-password" \
+  -v winnie-data:/data \
+  winnie
+```
+
+Open `http://localhost:8080/login` for normal access. The unlinked administrator page is at `http://localhost:8080/admin`. Sign in there with `WINNIE_ADMIN_ID` and `WINNIE_ADMIN_PASSWORD`, then create the IDs that users enter on the normal login page.
+
+Both environment variables are required; the container exits when either is missing. IDs are trimmed and matched case-insensitively. Deleting an ID immediately invalidates its active sessions.
+
+For production, place the container behind an HTTPS reverse proxy. WINNIE recognizes `X-Forwarded-Proto: https` and marks its session cookie `Secure`. Back up `/data/winnie.db` from the persistent volume; stop the container or use a SQLite-aware snapshot before copying a live database.
+
+The options below describe the former unauthenticated deployment and are retained only as development reference. They do not protect the application or provide ID login.
+
+### Legacy option A — Apache / Nginx Web Server (unauthenticated)
 
 This method enables auto-loading of `default_background.jpg` and `namelist.txt`.
 
@@ -78,14 +105,14 @@ This method enables auto-loading of `default_background.jpg` and `namelist.txt`.
    http://your-server-ip/index.html
    ```
 
-### Option B — VS Code Live Server (local development)
+### Legacy option B — VS Code Live Server (local development only)
 
 1. Install the [Live Server extension](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) in VS Code
 2. Open the project folder in VS Code
 3. Right-click `index.html` → **Open with Live Server**
 4. Auto-loading of `default_background.jpg` and `namelist.txt` will work normally
 
-### Option C — Open Directly (limited)
+### Legacy option C — Open Directly (unauthenticated and limited)
 
 Simply double-click `index.html` to open it in a browser. All features work **except** auto-loading of `default_background.jpg` and `namelist.txt`, because browsers block local file access via `fetch()` for security reasons. You can still upload files manually.
 
@@ -362,7 +389,7 @@ Check that the filter dropdown is set to **All** — if it's set to **✓ Checke
 | [FileSaver.js](https://github.com/eligrey/FileSaver.js/) | File download trigger |
 | [Google Fonts](https://fonts.google.com/) | DM Serif Display, DM Mono, DM Sans |
 
-No npm. No build step. No backend. Everything loads from CDN.
+The certificate renderer has no build step and loads its browser libraries from CDN. Authentication and ID administration are provided by the Node.js server and SQLite database in the Docker image.
 
 ---
 
