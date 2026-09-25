@@ -637,6 +637,12 @@
     text-align: center;
   }
 
+  .preview-tools .btn.auto-fit-active {
+    color: var(--accent);
+    border-color: rgba(200, 169, 110, 0.6);
+    background: rgba(200, 169, 110, 0.1);
+  }
+
   .preview-stage {
     display: flex;
     align-items: center;
@@ -1518,7 +1524,7 @@
         <button class="btn btn-ghost btn-sm" type="button" onclick="zoomPreview(-1)" title="Zoom out">-</button>
         <span class="preview-zoom-label" id="previewZoomLabel">100%</span>
         <button class="btn btn-ghost btn-sm" type="button" onclick="zoomPreview(1)" title="Zoom in">+</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="fitPreview()" title="Fit preview">Fit</button>
+        <button class="btn btn-ghost btn-sm auto-fit-active" id="previewFitButton" type="button" onclick="fitPreview()" title="Auto Fit enabled" aria-pressed="true">Fit</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="resetPreviewView()" title="Reset preview">Reset</button>
       </div>
     </div>
@@ -1635,6 +1641,9 @@ let previewZoom = 1;
 let previewPanX = 0;
 let previewPanY = 0;
 let previewDrag = null;
+let previewAutoFit = true;
+let previewResizeObserver = null;
+let previewFitFrame = null;
 const PREVIEW_MIN_ZOOM = 0.1;
 const PREVIEW_MAX_ZOOM = 4;
 const PREVIEW_ZOOM_STEP = 0.25;
@@ -1665,6 +1674,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStaffList();
   setupDragDrop();
   setupPreviewWheelZoom();
+  setupPreviewAutoFit();
   autoLoadDefaultBackground();
   loadTemplateGallery();
   autoLoadNamelist();
@@ -2431,7 +2441,8 @@ function finishPreview(canvas, wrap) {
   stage.innerHTML = '';
   stage.appendChild(canvas);
   previewCanvas = canvas;
-  applyPreviewTransform();
+  if (previewAutoFit) schedulePreviewFit();
+  else applyPreviewTransform();
 }
 
 function clampPreviewZoom(value) {
@@ -2448,6 +2459,7 @@ function applyPreviewTransform() {
 }
 
 function zoomPreview(direction) {
+  setPreviewAutoFit(false);
   previewZoom = clampPreviewZoom(previewZoom + direction * PREVIEW_ZOOM_STEP);
   applyPreviewTransform();
 }
@@ -2473,6 +2485,8 @@ function setupPreviewWheelZoom() {
     const nextZoom = clampPreviewZoom(oldZoom + direction * PREVIEW_ZOOM_STEP);
     if (nextZoom === oldZoom) return;
 
+    setPreviewAutoFit(false);
+
     const wrapRect = wrap.getBoundingClientRect();
     const pointerX = e.clientX - (wrapRect.left + wrapRect.width / 2);
     const pointerY = e.clientY - (wrapRect.top + wrapRect.height / 2);
@@ -2486,6 +2500,7 @@ function setupPreviewWheelZoom() {
 }
 
 function resetPreviewView() {
+  setPreviewAutoFit(false);
   previewZoom = 1;
   previewPanX = 0;
   previewPanY = 0;
@@ -2493,6 +2508,7 @@ function resetPreviewView() {
 }
 
 function fitPreview() {
+  setPreviewAutoFit(true);
   const wrap = document.getElementById('previewWrap');
   const canvas = document.getElementById('previewCanvas');
   if (!wrap || !canvas) return;
@@ -2511,9 +2527,39 @@ function fitPreview() {
   applyPreviewTransform();
 }
 
+function setPreviewAutoFit(enabled) {
+  previewAutoFit = enabled;
+  const button = document.getElementById('previewFitButton');
+  if (!button) return;
+  button.classList.toggle('auto-fit-active', enabled);
+  button.setAttribute('aria-pressed', String(enabled));
+  button.title = enabled ? 'Auto Fit enabled' : 'Fit preview and enable Auto Fit';
+}
+
+function schedulePreviewFit() {
+  if (!previewAutoFit) return;
+  if (previewFitFrame !== null) cancelAnimationFrame(previewFitFrame);
+  previewFitFrame = requestAnimationFrame(() => {
+    previewFitFrame = null;
+    if (previewAutoFit) fitPreview();
+  });
+}
+
+function setupPreviewAutoFit() {
+  const wrap = document.getElementById('previewWrap');
+  if (!wrap) return;
+  if ('ResizeObserver' in window) {
+    previewResizeObserver = new ResizeObserver(() => schedulePreviewFit());
+    previewResizeObserver.observe(wrap);
+  } else {
+    window.addEventListener('resize', schedulePreviewFit);
+  }
+}
+
 function setupPreviewPan(stage) {
   stage.addEventListener('pointerdown', e => {
     if (e.button !== undefined && e.button !== 0) return;
+    setPreviewAutoFit(false);
     previewDrag = {
       id: e.pointerId,
       startX: e.clientX,
@@ -3033,6 +3079,7 @@ function resetAll() {
   previewZoom = 1;
   previewPanX = 0;
   previewPanY = 0;
+  setPreviewAutoFit(true);
   FIELDS = BASE_FIELDS.map(f => ({ ...f }));
   setBgName('');
   setActiveTemplateCard('');
