@@ -74,7 +74,7 @@ docker run -d --name winnie \
   winnie
 ```
 
-Open `http://localhost:8080/login` for normal access. The unlinked administrator page is at `http://localhost:8080/admin`. Sign in there with `WINNIE_ADMIN_ID` and `WINNIE_ADMIN_PASSWORD`, then create the IDs that users enter on the normal login page.
+Open `http://localhost:8080/` for normal access. Unauthenticated visitors see the login screen at that same URL. The unlinked administrator page is at `http://localhost:8080/admin`. Sign in there with `WINNIE_ADMIN_ID` and `WINNIE_ADMIN_PASSWORD`, then create the IDs that users enter on the normal login page.
 
 Both environment variables are required; the container exits when either is missing. IDs are trimmed and matched case-insensitively. Deleting an ID immediately invalidates its active sessions.
 

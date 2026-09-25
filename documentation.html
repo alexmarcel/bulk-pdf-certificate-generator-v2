@@ -364,7 +364,7 @@ docker run -d --name winnie \
   -e WINNIE_ADMIN_PASSWORD="replace-with-a-strong-password" \
   -v winnie-data:/data \
   winnie</code></pre>
-        <p>Open <code>/admin</code> and use the configured administrator credentials to create or delete access IDs. Users sign in at <code>/login</code>. Both administrator environment variables are required, and IDs persist in <code>/data/winnie.db</code>.</p>
+        <p>Open <code>/admin</code> and use the configured administrator credentials to create or delete access IDs. Users sign in at the site root, <code>/</code>, without a login path appearing in the URL. Both administrator environment variables are required, and IDs persist in <code>/data/winnie.db</code>.</p>
         <p>Use an HTTPS reverse proxy in production. Back up the SQLite file from the persistent <code>/data</code> volume, stopping the container or using a SQLite-aware snapshot before copying a live database. Documentation and all application assets require an authenticated user session.</p>
       </section>
 

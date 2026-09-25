@@ -44,9 +44,14 @@ test('managed ID authentication, authorization, deletion, and persistence', asyn
   t.after(() => app.close());
 
   const anonymousApp = await fetch(app.baseUrl + '/', { redirect: 'manual' });
-  assert.equal(anonymousApp.status, 302);
-  assert.equal(anonymousApp.headers.get('location'), '/login');
-  assert.equal((await fetch(app.baseUrl + '/default_background.jpg', { redirect: 'manual' })).status, 302);
+  assert.equal(anonymousApp.status, 200);
+  assert.match(await anonymousApp.text(), /id="loginForm"/);
+  const legacyLogin = await fetch(app.baseUrl + '/login', { redirect: 'manual' });
+  assert.equal(legacyLogin.status, 302);
+  assert.equal(legacyLogin.headers.get('location'), '/');
+  const protectedAsset = await fetch(app.baseUrl + '/default_background.jpg', { redirect: 'manual' });
+  assert.equal(protectedAsset.status, 302);
+  assert.equal(protectedAsset.headers.get('location'), '/');
   assert.equal((await postJson(app.baseUrl, '/auth/login', { id: 'missing' })).status, 401);
 
   const adminLogin = await postJson(app.baseUrl, '/auth/admin-login', { id: ' root ADMIN ', password: 'secret-pass' });

@@ -337,15 +337,11 @@ export function createWinnieServer(options = {}) {
       }
 
       if ((method === 'GET' || method === 'HEAD') && pathname === '/login') {
-        if (session?.role === 'user') {
-          redirect(res, '/');
-          return;
-        }
         if (session?.role === 'admin') {
           redirect(res, '/admin');
           return;
         }
-        serveFile(res, path.join(ROOT, 'login.html'), method);
+        redirect(res, '/');
         return;
       }
 
@@ -364,7 +360,8 @@ export function createWinnieServer(options = {}) {
       }
 
       if (!session) {
-        redirect(res, '/login');
+        if (pathname === '/') serveFile(res, path.join(ROOT, 'login.html'), method);
+        else redirect(res, '/');
         return;
       }
       if (session.role !== 'user') {

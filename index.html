@@ -3213,7 +3213,7 @@ async function logout() {
   try {
     await fetch('/auth/logout', { method: 'POST' });
   } finally {
-    window.location.replace('/login');
+    window.location.replace('/');
   }
 }
 </script>
