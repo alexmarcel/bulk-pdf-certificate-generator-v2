@@ -652,6 +652,52 @@
     cursor: grabbing;
   }
 
+  .preview-side-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 20;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(200, 169, 110, 0.55);
+    border-radius: 50%;
+    background: rgba(14, 14, 16, 0.88);
+    color: var(--accent);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.48);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+
+  .preview-side-nav.prev { left: 16px; }
+  .preview-side-nav.next { right: 16px; }
+  .preview-side-nav svg { width: 24px; height: 24px; }
+
+  .preview-side-nav:hover:not(:disabled) {
+    color: #f0d99a;
+    border-color: var(--accent);
+    background: rgba(31, 31, 36, 0.96);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.58), 0 0 0 3px rgba(200, 169, 110, 0.1);
+  }
+
+  .preview-side-nav:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .preview-side-nav:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.94);
+  }
+
+  .preview-side-nav:disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
   #previewCanvas {
     max-width: 100%;
     max-height: 70vh;
@@ -1120,6 +1166,15 @@
       padding: 6px 8px;
     }
 
+    .preview-side-nav {
+      width: 44px;
+      height: 44px;
+    }
+
+    .preview-side-nav.prev { left: 8px; }
+    .preview-side-nav.next { right: 8px; }
+    .preview-side-nav svg { width: 21px; height: 21px; }
+
     #previewCanvas {
       max-height: 100% !important;
       max-width: 100% !important;
@@ -1468,10 +1523,12 @@
       </div>
     </div>
     <div class="preview-wrap" id="previewWrap" tabindex="0" aria-label="Live certificate preview. Use mouse wheel to zoom and drag to pan.">
+      <button class="preview-side-nav prev" id="previewSidePrev" type="button" onclick="prevPerson()" aria-label="Previous certificate" title="Previous certificate" disabled><i data-lucide="chevron-left"></i></button>
       <div class="no-preview">
         <div class="no-preview-icon"><i data-lucide="award"></i></div>
         <div class="no-preview-text">Configure fields to see a live preview</div>
       </div>
+      <button class="preview-side-nav next" id="previewSideNext" type="button" onclick="nextPerson()" aria-label="Next certificate" title="Next certificate" disabled><i data-lucide="chevron-right"></i></button>
     </div>
     <div class="generate-bar">
       <label class="checkbox-wrap" style="color:#b8b8c8;">WINNIE v1.0.1-beta.1 <a href="documentation.html" target="_blank" rel="noopener" style="color:#e2c987;text-decoration:none;margin-left:10px;">Documentation</a></label>
@@ -2300,6 +2357,7 @@ function updatePreview() {
   const labelEl = document.getElementById('previewPersonLabel');
 
   const selectedIndices = staffSelected.map((s, i) => s ? i : -1).filter(i => i !== -1);
+  updateSideNavigation(selectedIndices.length);
   if (selectedIndices.length === 0) {
     labelEl.textContent = 'Preview';
   } else {
@@ -2350,15 +2408,25 @@ function updatePreview() {
   draw();
 }
 
+function updateSideNavigation(selectedCount) {
+  const disabled = selectedCount <= 1;
+  const previousButton = document.getElementById('previewSidePrev');
+  const nextButton = document.getElementById('previewSideNext');
+  if (previousButton) previousButton.disabled = disabled;
+  if (nextButton) nextButton.disabled = disabled;
+}
+
 function finishPreview(canvas, wrap) {
   let stage = document.getElementById('previewStage');
   if (!stage) {
-    wrap.innerHTML = '';
+    const emptyState = wrap.querySelector('.no-preview');
+    if (emptyState) emptyState.remove();
     stage = document.createElement('div');
     stage.id = 'previewStage';
     stage.className = 'preview-stage';
     setupPreviewPan(stage);
-    wrap.appendChild(stage);
+    const nextButton = document.getElementById('previewSideNext');
+    wrap.insertBefore(stage, nextButton || null);
   }
   stage.innerHTML = '';
   stage.appendChild(canvas);
