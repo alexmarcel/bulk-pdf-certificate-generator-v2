@@ -11,6 +11,14 @@
     {
       "file": "with-sign.jpg",
       "label": "Signed"
+    },
+    {
+      "file": "penyertaan-no-border.png",
+      "label": "Penyertaan Signed"
+    },
+    {
+      "file": "penghargaan-no-border.png",
+      "label": "Penghargaan Signed"
     }
   ]
 }
